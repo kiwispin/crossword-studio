@@ -655,9 +655,10 @@
         Alex M.
       </div>
       
-      <p class="text-stone-600 text-xs leading-relaxed max-w-xs mx-auto mb-4">
+      <p class="text-stone-600 text-xs leading-relaxed max-w-xs mx-auto mb-1">
         has successfully conquered the <strong class="text-stone-900 font-bold">World Languages</strong> Challenge!
       </p>
+      <span id="cert-timestamp" class="text-[11px] text-stone-400 font-serif italic block mb-3"></span>
 
       <!-- 3-Pill Achievement Stats Grid -->
       <div class="grid grid-cols-3 gap-2 mb-4">
@@ -982,40 +983,57 @@
     }
 
     function showOfficialScorecard() {
-      const startTime = testStartTime || puzzleStartTime || Date.now();
-      const elapsedSec = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
-      const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-      const secs = String(elapsedSec % 60).padStart(2, '0');
-      
-      const displayName = testStudentName || 'Student';
-      document.getElementById('cert-student-name').textContent = displayName;
-      document.getElementById('cert-time-taken').textContent = `${mins}:${secs}`;
-      document.getElementById('cert-timestamp').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      try {
+        const startTime = testStartTime || puzzleStartTime || Date.now();
+        const elapsedSec = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+        const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+        const secs = String(elapsedSec % 60).padStart(2, '0');
+        
+        const displayName = testStudentName || 'Student';
+        const nameEl = document.getElementById('cert-student-name');
+        if (nameEl) nameEl.textContent = displayName;
+        
+        const timeEl = document.getElementById('cert-time-taken');
+        if (timeEl) timeEl.textContent = `${mins}:${secs}`;
+        
+        const tsEl = document.getElementById('cert-timestamp');
+        if (tsEl) tsEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      const totalWords = currentPuzzle ? (currentPuzzle.acrossClues.length + currentPuzzle.downClues.length) : 0;
-      document.getElementById('cert-accuracy').textContent = `${totalWords} / ${totalWords}`;
+        const totalWords = currentPuzzle ? (currentPuzzle.acrossClues.length + currentPuzzle.downClues.length) : 0;
+        const accEl = document.getElementById('cert-accuracy');
+        if (accEl) accEl.textContent = `${totalWords} / ${totalWords}`;
 
-      const badge = document.getElementById('cert-integrity-badge');
-      if (tabSwitchCount === 0) {
-        badge.textContent = `100% Focus`;
-        badge.className = "font-bold text-[10px] sm:text-[11px] text-emerald-800 leading-tight block truncate";
-      } else {
-        badge.textContent = `${tabSwitchCount} tab switch${tabSwitchCount > 1 ? 'es' : ''}`;
-        badge.className = "font-bold text-[10px] sm:text-[11px] text-amber-800 leading-tight block truncate";
+        const badge = document.getElementById('cert-integrity-badge');
+        if (badge) {
+          if (tabSwitchCount === 0) {
+            badge.textContent = `100% Focus`;
+            badge.className = "font-bold text-[10px] sm:text-[11px] text-emerald-800 leading-tight block truncate";
+          } else {
+            badge.textContent = `${tabSwitchCount} tab switch${tabSwitchCount > 1 ? 'es' : ''}`;
+            badge.className = "font-bold text-[10px] sm:text-[11px] text-amber-800 leading-tight block truncate";
+          }
+        }
+
+        const randomAuth = Math.floor(1000 + Math.random() * 9000);
+        const hashEl = document.getElementById('cert-hash-code');
+        if (hashEl) hashEl.textContent = `AUTH: ILW-${displayName.toUpperCase().slice(0,3)}-${randomAuth}-OK`;
+        
+        const modal = document.getElementById('test-scorecard-modal');
+        if (modal) modal.classList.remove('hidden');
+      } catch (err) {
+        console.error("Scorecard render error:", err);
+        const modal = document.getElementById('test-scorecard-modal');
+        if (modal) modal.classList.remove('hidden');
       }
-
-      const randomAuth = Math.floor(1000 + Math.random() * 9000);
-      document.getElementById('cert-hash-code').textContent = `AUTH: ILW-${displayName.toUpperCase().slice(0,3)}-${randomAuth}-OK`;
-      document.getElementById('test-scorecard-modal').classList.remove('hidden');
     }
 
     function copyCertText() {
-      const name = document.getElementById('cert-student-name').textContent;
-      const time = document.getElementById('cert-time-taken').textContent;
-      const acc = document.getElementById('cert-accuracy').textContent;
-      const session = document.getElementById('cert-integrity-badge').textContent;
-      const auth = document.getElementById('cert-hash-code').textContent;
-      const title = currentPuzzle ? currentPuzzle.title : "Crossword";
+      const name = document.getElementById('cert-student-name')?.textContent || 'Student';
+      const time = document.getElementById('cert-time-taken')?.textContent || '00:00';
+      const acc = document.getElementById('cert-accuracy')?.textContent || '100%';
+      const session = document.getElementById('cert-integrity-badge')?.textContent || '100% Focus';
+      const auth = document.getElementById('cert-hash-code')?.textContent || 'AUTH: OK';
+      const title = currentPuzzle ? currentPuzzle.title : "World Languages";
 
       const text = `🧩 Crossword Studio: ${title}\n` +
                    `👤 Student: ${name}\n` +
@@ -1140,11 +1158,7 @@
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           if (grid[y][x]) {
-            if (isAnswerKeyRevealed) {
-              updateCellInput(x, y, grid[y][x].char);
-            } else {
-              updateCellInput(x, y, '');
-            }
+            updateCellInput(x, y, isAnswerKeyRevealed ? grid[y][x].char : '');
           }
         }
       }
@@ -1155,6 +1169,9 @@
       if (btn) {
         btn.classList.toggle('bg-amber-100', isAnswerKeyRevealed);
         btn.classList.toggle('border-amber-300', isAnswerKeyRevealed);
+      }
+      if (isAnswerKeyRevealed) {
+        setTimeout(() => triggerVictory(), 200);
       }
     }
 
@@ -1889,6 +1906,9 @@
     });
 
     function updateCellInput(x, y, val) {
+      if (playerGridState && playerGridState[y]) {
+        playerGridState[y][x] = val;
+      }
       const input = document.getElementById(`input-${x}-${y}`);
       if (input) input.value = val;
     }
