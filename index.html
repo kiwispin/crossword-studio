@@ -614,46 +614,61 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- VERIFIED STUDENT CERTIFICATE & SCORECARD MODAL -->
+  <!-- LUXURY OFFICIAL STUDENT DIPLOMA & SCORECARD -->
   <!-- ========================================================================= -->
-  <div id="test-scorecard-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm hidden">
-    <div class="bg-white rounded-3xl p-7 max-w-sm w-full text-center shadow-2xl border border-[#E5E0CF] relative">
-      <div class="w-14 h-14 bg-[#4E8B56] text-white rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-[0_3px_0_0_#2E5834]">
-        🏆
-      </div>
-      <h2 class="font-bold text-xl text-stone-900 tracking-tight mb-0.5">Challenge Completed!</h2>
-      <p class="text-xs text-stone-400 mb-4 font-serif italic" id="cert-timestamp">Official Language Week Submission</p>
-
-      <!-- Scorecard Box -->
-      <div class="bg-[#FAF8F5] border border-[#E2DEC9] rounded-2xl p-4 text-left space-y-2 mb-4">
-        <div class="flex justify-between items-center text-xs pb-1.5 border-b border-[#EAE5D5]">
-          <span class="text-stone-500 font-medium">Student:</span>
-          <span id="cert-student-name" class="font-bold text-stone-900">Alex</span>
-        </div>
-        <div class="flex justify-between items-center text-xs pb-1.5 border-b border-[#EAE5D5]">
-          <span class="text-stone-500 font-medium">Time Taken:</span>
-          <span id="cert-time-taken" class="font-mono font-bold text-stone-900">03:45</span>
-        </div>
-        <div class="flex justify-between items-center text-xs pb-1.5 border-b border-[#EAE5D5]">
-          <span class="text-stone-500 font-medium">Score:</span>
-          <span id="cert-accuracy" class="font-bold text-[#4E8B56]">10 / 10 (100%)</span>
-        </div>
-        <div class="flex justify-between items-center text-xs">
-          <span class="text-stone-500 font-medium">Session:</span>
-          <span id="cert-integrity-badge" class="font-bold px-2 py-0.5 rounded text-[11px]"></span>
-        </div>
+  <div id="test-scorecard-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-md hidden">
+    <div class="bg-gradient-to-b from-[#FFFDF9] via-[#FAF6ED] to-[#F5EFE1] rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-[3px] border-amber-300 ring-8 ring-amber-100/50 relative overflow-hidden">
+      
+      <!-- Top Decorative Ribbon -->
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 border border-amber-300/80 text-amber-900 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-3 shadow-2xs">
+        <span>🏆</span>
+        <span>Certificate of Mastery</span>
+        <span>🏆</span>
       </div>
 
-      <div class="text-[10px] font-mono text-stone-400 mb-4" id="cert-hash-code">
-        AUTH: ILW-ALE-9824
+      <h2 class="font-serif italic font-normal text-stone-500 text-xs sm:text-sm mb-0.5">This certifies that</h2>
+      
+      <!-- Prominent Student Name -->
+      <div id="cert-student-name" class="font-sans font-black text-2xl sm:text-3xl text-stone-900 tracking-tight my-1 capitalize py-0.5">
+        Alex M.
+      </div>
+      
+      <p class="text-stone-600 text-xs leading-relaxed max-w-xs mx-auto mb-4">
+        has successfully conquered the <strong class="text-stone-900 font-bold">International Language Week</strong> Word Challenge!
+      </p>
+
+      <!-- 3-Pill Achievement Stats Grid -->
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="bg-white/80 border border-amber-200/80 rounded-xl p-2 shadow-2xs">
+          <span class="block text-[9px] uppercase tracking-wider font-bold text-stone-400 mb-0.5">Time</span>
+          <span id="cert-time-taken" class="font-mono font-black text-xs sm:text-sm text-stone-900">03:45</span>
+        </div>
+        <div class="bg-white/80 border border-emerald-200/80 rounded-xl p-2 shadow-2xs">
+          <span class="block text-[9px] uppercase tracking-wider font-bold text-stone-400 mb-0.5">Score</span>
+          <span id="cert-accuracy" class="font-black text-xs sm:text-sm text-[#4E8B56]">10 / 10</span>
+        </div>
+        <div class="bg-white/80 border border-amber-200/80 rounded-xl p-2 shadow-2xs">
+          <span class="block text-[9px] uppercase tracking-wider font-bold text-stone-400 mb-0.5">Session</span>
+          <span id="cert-integrity-badge" class="font-bold text-[10px] sm:text-[11px] text-emerald-800 leading-tight block truncate">100% Focus</span>
+        </div>
       </div>
 
+      <!-- Official Security Authentication Badge -->
+      <div class="bg-white/60 border border-amber-200/60 rounded-xl px-3 py-1.5 flex items-center justify-between text-[10px] font-mono text-stone-500 mb-5">
+        <span class="flex items-center gap-1 font-bold text-amber-900">
+          <span>✓</span>
+          <span>OFFICIAL RECORD</span>
+        </span>
+        <span id="cert-hash-code" class="text-stone-400">AUTH: ILW-ALE-9824</span>
+      </div>
+
+      <!-- Action Buttons -->
       <div class="space-y-2">
-        <button onclick="copyCertText()" class="w-full bg-[#4E8B56] hover:bg-[#3E7345] text-white font-bold text-xs py-2.5 rounded-xl shadow-[0_2px_0_0_#2E5834] transition flex items-center justify-center gap-1.5 active:scale-95">
+        <button onclick="copyCertText()" class="w-full bg-[#4E8B56] hover:bg-[#3E7345] text-white font-bold text-xs sm:text-sm py-3 rounded-xl shadow-[0_3px_0_0_#2E5834] transition flex items-center justify-center gap-2 active:scale-95">
           <span>📋</span>
           <span>Copy for Google Classroom</span>
         </button>
-        <button onclick="closeScorecardModal()" class="w-full border border-[#E2DEC9] bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs py-2 rounded-xl transition">
+        <button onclick="closeScorecardModal()" class="w-full border border-stone-300/80 bg-white/80 hover:bg-white text-stone-700 font-bold text-xs py-2 rounded-xl transition shadow-2xs">
           Done
         </button>
       </div>
@@ -968,11 +983,11 @@
 
       const badge = document.getElementById('cert-integrity-badge');
       if (tabSwitchCount === 0) {
-        badge.textContent = `🌟 100% Focus (Continuous)`;
-        badge.className = "font-bold px-2 py-0.5 rounded text-[11px] bg-emerald-100 text-emerald-800";
+        badge.textContent = `100% Focus`;
+        badge.className = "font-bold text-[10px] sm:text-[11px] text-emerald-800 leading-tight block truncate";
       } else {
-        badge.textContent = `⚡ Completed (${tabSwitchCount} app switches)`;
-        badge.className = "font-bold px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800";
+        badge.textContent = `${tabSwitchCount} tab switch${tabSwitchCount > 1 ? 'es' : ''}`;
+        badge.className = "font-bold text-[10px] sm:text-[11px] text-amber-800 leading-tight block truncate";
       }
 
       const randomAuth = Math.floor(1000 + Math.random() * 9000);
