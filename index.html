@@ -314,6 +314,10 @@
             <span>Hint</span>
             <span id="hint-lock-icon" class="text-[9px] text-stone-400">🔒</span>
           </button>
+          <button id="reveal-answers-btn" onclick="handleToggleAnswersClick()" class="px-2.5 py-1 rounded-full bg-white hover:bg-stone-50 border border-[#E2DEC9] text-stone-700 font-bold text-xs shadow-[0_2px_0_0_#D5CEBA] transition flex items-center gap-1" title="Teacher Answers Toggle">
+            <span>Answers</span>
+            <span id="answers-lock-icon" class="text-[9px] text-stone-400">🔒</span>
+          </button>
         </div>
       </div>
 
@@ -855,6 +859,7 @@
       const tabSheetsLock = document.getElementById('tab-sheets-lock');
       const answerKeyLock = document.getElementById('answer-key-lock');
       const hintLockIcon = document.getElementById('hint-lock-icon');
+      const answersLockIcon = document.getElementById('answers-lock-icon');
 
       if (isTeacherUnlocked) {
         lockBtnIcon.textContent = '🔓';
@@ -863,6 +868,7 @@
         tabSheetsLock.textContent = '🔓';
         answerKeyLock.textContent = '🔓';
         hintLockIcon.textContent = '🔓';
+        if (answersLockIcon) answersLockIcon.textContent = '🔓';
       } else {
         lockBtnIcon.textContent = '🔒';
         lockBtnText.textContent = 'PIN';
@@ -870,6 +876,7 @@
         tabSheetsLock.textContent = '🔒';
         answerKeyLock.textContent = '🔒';
         hintLockIcon.textContent = '🔒';
+        if (answersLockIcon) answersLockIcon.textContent = '🔒';
       }
     }
 
@@ -1105,6 +1112,43 @@
       checkTeacherAccess(() => {
         revealLetter();
       }, "Enter PIN to reveal a hint for this square");
+    }
+
+    let isAnswerKeyRevealed = false;
+    function handleToggleAnswersClick() {
+      if (isTestMode) {
+        showToast('Answers locked during test', '🔒');
+        return;
+      }
+      checkTeacherAccess(() => {
+        toggleAnswerKey();
+      }, "Enter Teacher PIN (2626) to reveal answers");
+    }
+
+    function toggleAnswerKey() {
+      if (!currentPuzzle) return;
+      const { grid, width, height } = currentPuzzle;
+      isAnswerKeyRevealed = !isAnswerKeyRevealed;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (grid[y][x]) {
+            if (isAnswerKeyRevealed) {
+              updateCellInput(x, y, grid[y][x].char);
+            } else {
+              updateCellInput(x, y, '');
+            }
+          }
+        }
+      }
+      evaluateWordsProgress(false);
+      updateHighlights();
+      showToast(isAnswerKeyRevealed ? '🔑 Solution Revealed' : 'Solution Hidden', isAnswerKeyRevealed ? '🔑' : '✨');
+      const btn = document.getElementById('reveal-answers-btn');
+      if (btn) {
+        btn.classList.toggle('bg-amber-100', isAnswerKeyRevealed);
+        btn.classList.toggle('border-amber-300', isAnswerKeyRevealed);
+      }
     }
 
     // --- PRESETS ---
