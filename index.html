@@ -73,15 +73,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: var(--dynamic-tile-size, 34px);
-      height: var(--dynamic-tile-size, 34px);
-      font-size: var(--dynamic-font-size, 15px);
+      width: clamp(22px, 5.2vmin, 38px);
+      height: clamp(22px, 5.2vmin, 38px);
+      font-size: clamp(11px, 2.6vmin, 16px);
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .crossword-tile-blank {
+      width: clamp(22px, 5.2vmin, 38px);
+      height: clamp(22px, 5.2vmin, 38px);
+      background: transparent;
       flex-shrink: 0;
       box-sizing: border-box;
     }
 
     .crossword-tile .tile-number {
-      font-size: var(--dynamic-num-size, 8px);
+      font-size: clamp(7px, 1.3vmin, 9px);
     }
 
     .crossword-tile input {
@@ -1674,25 +1682,6 @@
       document.getElementById('editor-preview-container').innerHTML = html;
     }
 
-    function updateGridSizing() {
-      const wrapper = document.getElementById('grid-scroll-wrapper');
-      if (!wrapper || !currentPuzzle) return;
-      const { width, height } = currentPuzzle;
-      if (!width || !height) return;
-
-      const availW = Math.max(80, wrapper.clientWidth - 16);
-      const availH = Math.max(80, wrapper.clientHeight - 16);
-      const gap = 3;
-      
-      const maxTileW = Math.floor((availW - (width - 1) * gap) / width);
-      const maxTileH = Math.floor((availH - (height - 1) * gap) / height);
-      const tileSize = Math.max(20, Math.min(maxTileW, maxTileH, 44));
-
-      document.documentElement.style.setProperty('--dynamic-tile-size', `${tileSize}px`);
-      document.documentElement.style.setProperty('--dynamic-font-size', `${Math.max(11, Math.floor(tileSize * 0.52))}px`);
-      document.documentElement.style.setProperty('--dynamic-num-size', `${Math.max(7, Math.floor(tileSize * 0.24))}px`);
-    }
-
     // Render Play View (Knotwords / Apple Award Style)
     function renderPlayView() {
       if (!currentPuzzle) return;
@@ -1702,9 +1691,7 @@
       document.getElementById('play-title').textContent = title;
       document.getElementById('play-subtitle').textContent = subtitle || 'Can you name all these languages from around the globe?';
 
-      updateGridSizing();
-
-      let html = `<div class="grid bg-transparent" style="grid-template-columns: repeat(${width}, var(--dynamic-tile-size, 34px)); gap: 3px;">`;
+      let html = `<div class="grid bg-transparent justify-center m-auto" style="grid-template-columns: repeat(${width}, max-content); gap: 3px;">`;
 
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -1714,11 +1701,11 @@
             html += `
               <div id="cell-${x}-${y}" onclick="handleCellClick(${x}, ${y})" class="crossword-tile cursor-pointer">
                 ${cell.number ? `<span class="tile-number absolute top-0.5 left-0.5 font-bold text-stone-400 leading-none pointer-events-none">${cell.number}</span>` : ''}
-                <input id="input-${x}-${y}" type="text" maxlength="1" value="${userVal}" readonly class="w-full h-full text-center bg-transparent cursor-pointer select-none">
+                <input id="input-${x}-${y}" type="text" maxlength="1" value="${userVal}" readonly class="w-full h-full text-center bg-transparent cursor-pointer select-none font-bold">
               </div>
             `;
           } else {
-            html += `<div style="width: var(--dynamic-tile-size, 34px); height: var(--dynamic-tile-size, 34px);" class="bg-transparent pointer-events-none"></div>`;
+            html += `<div class="crossword-tile-blank pointer-events-none"></div>`;
           }
         }
       }
@@ -2211,16 +2198,6 @@
       document.getElementById('gas-code-block').textContent = GAS_CODE;
       updateTeacherLockUI();
       if (!checkUrlHash()) loadPreset('languages');
-
-      window.addEventListener('resize', () => {
-        updateGridSizing();
-      });
-
-      if (window.ResizeObserver) {
-        const ro = new ResizeObserver(() => updateGridSizing());
-        const wrapper = document.getElementById('grid-scroll-wrapper');
-        if (wrapper) ro.observe(wrapper);
-      }
     });
   </script>
 </body>
