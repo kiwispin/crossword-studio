@@ -243,11 +243,11 @@
         <span class="font-sans font-bold tracking-widest text-xs sm:text-sm uppercase text-stone-900">LANGUAGE WEEK</span>
       </div>
 
-      <!-- Right Utility Actions (Anti-Cheat Test Mode, Teacher PIN, Sound) -->
+      <!-- Right Utility Actions (Stealth Challenge Mode, Teacher PIN, Sound) -->
       <div class="flex items-center gap-1.5">
-        <button id="proctor-btn" onclick="handleProctorToggle()" class="h-7 px-2.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1 shadow-2xs" title="Start Anti-Cheat Classroom Test">
-          <span id="proctor-btn-icon">🛡️</span>
-          <span id="proctor-btn-text" class="text-[11px]">Class Test</span>
+        <button id="proctor-btn" onclick="handleProctorToggle()" class="h-7 px-2.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1 shadow-2xs" title="Start Timed Challenge">
+          <span id="proctor-btn-icon">⏱️</span>
+          <span id="proctor-btn-text" class="text-[11px]">Challenge</span>
         </button>
         <button id="teacher-lock-btn" onclick="toggleTeacherLock()" class="h-7 px-2 rounded-full text-xs font-semibold bg-[#F5F2E9] hover:bg-[#EBE5D6] text-stone-700 transition flex items-center gap-1" title="Teacher PIN Protection">
           <span id="lock-status-icon">🔒</span>
@@ -263,23 +263,20 @@
     </div>
   </header>
 
-  <!-- Anti-Cheat Test Mode Active Status Banner -->
+  <!-- Challenge Mode Active Status Banner (Clean & Non-Provocative) -->
   <div id="test-mode-banner" class="max-w-5xl mx-auto w-full px-4 hidden no-print">
     <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl px-4 py-1.5 flex items-center justify-between text-xs shadow-md mt-1">
       <div class="flex items-center gap-3">
         <span class="font-bold flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
-          🛡️ TEST IN PROGRESS
+          ⏱️ CHALLENGE IN PROGRESS
         </span>
         <span id="test-student-name" class="font-medium bg-black/20 px-2 py-0.5 rounded text-[11px]">Student</span>
-        <span class="font-mono font-bold text-amber-100" id="test-live-timer">⏱️ 00:00</span>
+        <span class="font-mono font-bold text-amber-100" id="test-live-timer">00:00</span>
       </div>
-      <div class="flex items-center gap-3">
-        <span id="test-blur-counter" class="font-bold bg-white/20 px-2 py-0.5 rounded text-[11px]">
-          Tab Switches: 0
-        </span>
+      <div class="flex items-center gap-2">
         <button onclick="exitTestModeRequest()" class="bg-white text-stone-900 font-bold px-2.5 py-0.5 rounded hover:bg-stone-100 transition text-[11px] shadow-2xs">
-          End Test (Teacher)
+          Teacher Stop
         </button>
       </div>
     </div>
@@ -586,30 +583,22 @@
   </main>
 
   <!-- ========================================================================= -->
-  <!-- START CLASSROOM TEST MODAL (PROCTOR SETUP) -->
+  <!-- START TIMED CHALLENGE MODAL (PROCTOR SETUP) -->
   <!-- ========================================================================= -->
   <div id="proctor-setup-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm hidden">
     <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border border-[#E5E0CF]">
       <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto mb-2.5 text-xl font-bold border border-amber-300">
-        🛡️
+        ⏱️
       </div>
-      <h3 class="font-bold text-lg text-stone-900 tracking-tight mb-1">Classroom Test Mode</h3>
+      <h3 class="font-bold text-lg text-stone-900 tracking-tight mb-1">Timed Challenge</h3>
       <p class="text-xs text-stone-500 mb-4 leading-relaxed">
-        Enables full-screen lock, blocks copy/paste & DevTools, and records any tab-switching attempts.
+        Test your speed and vocabulary! Complete the puzzle to earn your official completion certificate.
       </p>
 
       <div class="space-y-3 text-left mb-5">
         <div>
-          <label class="block text-[11px] font-bold text-stone-700 uppercase mb-1">Student Name / ID</label>
-          <input type="text" id="proctor-student-input" placeholder="e.g. Alex M." class="w-full px-3 py-2 text-xs border border-[#D5CEBA] rounded-xl focus:border-stone-900 focus:outline-none bg-white">
-        </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 space-y-1">
-          <p class="font-bold flex items-center gap-1"><span>🔒</span> Anti-Cheat Active:</p>
-          <ul class="list-disc list-inside text-amber-800 space-y-0.5">
-            <li>Tab switches will be logged & reported</li>
-            <li>Clipboard copy/cut disabled</li>
-            <li>Teacher PIN required to exit test</li>
-          </ul>
+          <label class="block text-[11px] font-bold text-stone-700 uppercase mb-1">Your Name</label>
+          <input type="text" id="proctor-student-input" placeholder="e.g. Alex" class="w-full px-3 py-2 text-xs border border-[#D5CEBA] rounded-xl focus:border-stone-900 focus:outline-none bg-white">
         </div>
       </div>
 
@@ -618,7 +607,7 @@
           Cancel
         </button>
         <button onclick="startTestMode()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-md transition">
-          Start Test 🚀
+          Start Challenge 🚀
         </button>
       </div>
     </div>
@@ -630,10 +619,10 @@
   <div id="test-scorecard-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm hidden">
     <div class="bg-white rounded-3xl p-7 max-w-sm w-full text-center shadow-2xl border border-[#E5E0CF] relative">
       <div class="w-14 h-14 bg-[#4E8B56] text-white rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-[0_3px_0_0_#2E5834]">
-        🎓
+        🏆
       </div>
-      <h2 class="font-bold text-xl text-stone-900 tracking-tight mb-0.5">Official Test Result</h2>
-      <p class="text-xs text-stone-400 mb-4 font-serif italic" id="cert-timestamp">Verified Classroom Submission</p>
+      <h2 class="font-bold text-xl text-stone-900 tracking-tight mb-0.5">Challenge Completed!</h2>
+      <p class="text-xs text-stone-400 mb-4 font-serif italic" id="cert-timestamp">Official Language Week Submission</p>
 
       <!-- Scorecard Box -->
       <div class="bg-[#FAF8F5] border border-[#E2DEC9] rounded-2xl p-4 text-left space-y-2 mb-4">
@@ -646,17 +635,17 @@
           <span id="cert-time-taken" class="font-mono font-bold text-stone-900">03:45</span>
         </div>
         <div class="flex justify-between items-center text-xs pb-1.5 border-b border-[#EAE5D5]">
-          <span class="text-stone-500 font-medium">Accuracy:</span>
+          <span class="text-stone-500 font-medium">Score:</span>
           <span id="cert-accuracy" class="font-bold text-[#4E8B56]">10 / 10 (100%)</span>
         </div>
         <div class="flex justify-between items-center text-xs">
-          <span class="text-stone-500 font-medium">Integrity Check:</span>
+          <span class="text-stone-500 font-medium">Session:</span>
           <span id="cert-integrity-badge" class="font-bold px-2 py-0.5 rounded text-[11px]"></span>
         </div>
       </div>
 
       <div class="text-[10px] font-mono text-stone-400 mb-4" id="cert-hash-code">
-        AUTH: ILW-VERIFIED-9824
+        AUTH: ILW-ALE-9824
       </div>
 
       <button onclick="closeScorecardModal()" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs py-3 rounded-xl shadow-md transition">
@@ -902,23 +891,22 @@
 
       // Update UI elements
       document.getElementById('test-student-name').textContent = testStudentName;
-      document.getElementById('test-blur-counter').textContent = `Tab Switches: 0`;
       document.getElementById('test-mode-banner').classList.remove('hidden');
       document.getElementById('proctor-btn-icon').textContent = '⏹️';
-      document.getElementById('proctor-btn-text').textContent = 'Test Active';
-      document.getElementById('proctor-btn').className = "h-7 px-2.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300 transition flex items-center gap-1 shadow-2xs";
+      document.getElementById('proctor-btn-text').textContent = 'Active';
+      document.getElementById('proctor-btn').className = "h-7 px-2.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900 border border-amber-300 transition flex items-center gap-1 shadow-2xs";
       
-      // Disable tabs & hint during test
+      // Disable tabs & hint during challenge
       document.getElementById('nav-tabs-container').classList.add('opacity-40', 'pointer-events-none');
       document.getElementById('hint-action-btn').classList.add('opacity-40', 'pointer-events-none');
-      document.getElementById('footer-status-msg').textContent = '🛡️ Test Mode Active • Tab switches recorded';
+      document.getElementById('footer-status-msg').textContent = '⏱️ Timed Challenge Mode Active';
 
       // Start timer
       clearInterval(testTimerInterval);
       testTimerInterval = setInterval(updateLiveTestTimer, 1000);
       updateLiveTestTimer();
 
-      showToast(`🛡️ Test Mode Active for ${testStudentName}`, '🚀');
+      showToast(`⏱️ Challenge started for ${testStudentName}`, '🚀');
     }
 
     function updateLiveTestTimer() {
@@ -926,13 +914,13 @@
       const elapsedSec = Math.floor((Date.now() - testStartTime) / 1000);
       const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
       const secs = String(elapsedSec % 60).padStart(2, '0');
-      document.getElementById('test-live-timer').textContent = `⏱️ ${mins}:${secs}`;
+      document.getElementById('test-live-timer').textContent = `${mins}:${secs}`;
     }
 
     function exitTestModeRequest() {
       checkTeacherAccess(() => {
         stopTestMode(false);
-      }, "Enter Teacher PIN to end Test Mode");
+      }, "Enter Teacher PIN to end Challenge Mode");
     }
 
     function stopTestMode(showCard = false) {
@@ -941,13 +929,13 @@
       document.body.classList.remove('test-mode-active');
       document.getElementById('test-mode-banner').classList.add('hidden');
 
-      document.getElementById('proctor-btn-icon').textContent = '🛡️';
-      document.getElementById('proctor-btn-text').textContent = 'Class Test';
+      document.getElementById('proctor-btn-icon').textContent = '⏱️';
+      document.getElementById('proctor-btn-text').textContent = 'Challenge';
       document.getElementById('proctor-btn').className = "h-7 px-2.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1 shadow-2xs";
 
       document.getElementById('nav-tabs-container').classList.remove('opacity-40', 'pointer-events-none');
       document.getElementById('hint-action-btn').classList.remove('opacity-40', 'pointer-events-none');
-      document.getElementById('footer-status-msg').textContent = '🛡️ Anti-Cheat Protected';
+      document.getElementById('footer-status-msg').textContent = '✨ Crossword Studio';
 
       if (document.fullscreenElement && document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
@@ -956,7 +944,7 @@
       if (showCard) {
         showOfficialScorecard();
       } else {
-        showToast('Test Mode Ended by Teacher', '🔒');
+        showToast('Challenge Ended by Teacher', '🔒');
       }
     }
 
@@ -974,10 +962,10 @@
 
       const badge = document.getElementById('cert-integrity-badge');
       if (tabSwitchCount === 0) {
-        badge.textContent = `🟢 Verified Clean (0 Tab Switches)`;
+        badge.textContent = `🌟 100% Focus (Continuous)`;
         badge.className = "font-bold px-2 py-0.5 rounded text-[11px] bg-emerald-100 text-emerald-800";
       } else {
-        badge.textContent = `⚠️ Flagged (${tabSwitchCount} Tab Switches)`;
+        badge.textContent = `⚡ Completed (${tabSwitchCount} app switches)`;
         badge.className = "font-bold px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800";
       }
 
@@ -990,36 +978,29 @@
       document.getElementById('test-scorecard-modal').classList.add('hidden');
     }
 
-    // --- TAB SWITCH & BLUR DETECTION ---
+    // --- TAB SWITCH & BLUR DETECTION (SILENT RECORDING) ---
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden' && isTestMode) {
         tabSwitchCount++;
-        document.getElementById('test-blur-counter').textContent = `Tab Switches: ${tabSwitchCount}`;
-        document.getElementById('test-blur-counter').classList.add('bg-red-500', 'text-white');
       }
     });
 
     window.addEventListener('blur', () => {
       if (isTestMode) {
         tabSwitchCount++;
-        document.getElementById('test-blur-counter').textContent = `Tab Switches: ${tabSwitchCount}`;
-        showToast(`⚠️ Tab Switch / Focus Lost (#${tabSwitchCount})`, '⚠️');
       }
     });
 
-    // --- ANTI-COPY, ANTI-CLIPBOARD & DEVTOOLS BLOCKING ---
+    // --- ANTI-COPY, ANTI-CLIPBOARD & DEVTOOLS BLOCKING (SILENT) ---
     document.addEventListener('contextmenu', (e) => {
-      // Block right click context menu to prevent "Inspect Element" or "Search Google"
       if (!isTeacherUnlocked) {
         e.preventDefault();
-        showToast('🔒 Right-click disabled (Anti-Cheat)', '🛡️');
       }
     });
 
     document.addEventListener('copy', (e) => {
       if (!isTeacherUnlocked) {
         e.preventDefault();
-        showToast('🔒 Copying clue text is disabled', '🛡️');
       }
     });
 
@@ -1038,7 +1019,6 @@
           ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U'))
         ) {
           e.preventDefault();
-          showToast('🔒 Developer Tools Disabled', '🛡️');
         }
       }
     });
