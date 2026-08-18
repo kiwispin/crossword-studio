@@ -648,9 +648,15 @@
         AUTH: ILW-ALE-9824
       </div>
 
-      <button onclick="closeScorecardModal()" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs py-3 rounded-xl shadow-md transition">
-        Done (Teacher Return)
-      </button>
+      <div class="space-y-2">
+        <button onclick="copyCertText()" class="w-full bg-[#4E8B56] hover:bg-[#3E7345] text-white font-bold text-xs py-2.5 rounded-xl shadow-[0_2px_0_0_#2E5834] transition flex items-center justify-center gap-1.5 active:scale-95">
+          <span>📋</span>
+          <span>Copy for Google Classroom</span>
+        </button>
+        <button onclick="closeScorecardModal()" class="w-full border border-[#E2DEC9] bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs py-2 rounded-xl transition">
+          Done
+        </button>
+      </div>
     </div>
   </div>
 
@@ -972,6 +978,29 @@
       const randomAuth = Math.floor(1000 + Math.random() * 9000);
       document.getElementById('cert-hash-code').textContent = `AUTH: ILW-${testStudentName.toUpperCase().slice(0,3)}-${randomAuth}-OK`;
       document.getElementById('test-scorecard-modal').classList.remove('hidden');
+    }
+
+    function copyCertText() {
+      const name = document.getElementById('cert-student-name').textContent;
+      const time = document.getElementById('cert-time-taken').textContent;
+      const acc = document.getElementById('cert-accuracy').textContent;
+      const session = document.getElementById('cert-integrity-badge').textContent;
+      const auth = document.getElementById('cert-hash-code').textContent;
+      const title = currentPuzzle ? currentPuzzle.title : "Crossword";
+
+      const text = `🧩 Crossword Studio: ${title}\n` +
+                   `👤 Student: ${name}\n` +
+                   `⏱️ Time: ${time}\n` +
+                   `🎯 Score: ${acc}\n` +
+                   `🌟 Session: ${session}\n` +
+                   `🔑 ${auth}\n` +
+                   `🔗 https://kiwispin.github.io/crossword-studio/`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Copied! Paste into Google Classroom', '✅');
+      }).catch(() => {
+        showToast('Ready to paste', '📋');
+      });
     }
 
     function closeScorecardModal() {
