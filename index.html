@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>International Language Week • Crossword Studio</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts: Outfit (Apple/Game UI) & Newsreader (Editorial Accent) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['"Newsreader"', 'Georgia', 'serif'],
+          },
+          colors: {
+            canvas: '#F8F6F0',
+            tile: {
+              DEFAULT: '#FFFFFF',
+              border: '#E2DEC9',
+              activeBorder: '#18181B',
+              activeBg: '#FFFBEB',
+              activeWord: '#F5F8FA',
+              solvedBg: '#4E8B56',
+              solvedBorder: '#3C7043',
+              solvedShadow: '#2F5734',
+              shadow: '#D8D3BE',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-color: #F8F6F0;
+    }
+    body {
+      font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      color: #1C1917;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Anti-Cheat: Disable selection on clues and puzzle text */
+    .unselectable {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+    }
+
+    /* Tactile 3D Enamel Tile */
+    .crossword-tile {
+      position: relative;
+      user-select: none;
+      background: #FFFFFF;
+      border: 2px solid #E4DFCE;
+      border-radius: 8px;
+      box-shadow: 0 3px 0 0 #D5CEBA, 0 4px 6px -1px rgba(0,0,0,0.03);
+      transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .crossword-tile input {
+      text-transform: uppercase;
+      caret-color: transparent;
+      outline: none;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: #1C1917;
+    }
+
+    /* Active Word Highlight */
+    .crossword-tile.active-word {
+      background-color: #F0F6FA !important;
+      border-color: #BCD4E6 !important;
+      box-shadow: 0 3px 0 0 #A8C4D8;
+    }
+
+    /* Active Focused Cell */
+    .crossword-tile.active-cell {
+      background-color: #FFFFFF !important;
+      border-color: #18181B !important;
+      box-shadow: 0 4px 0 0 #18181B, 0 6px 12px -2px rgba(0,0,0,0.12) !important;
+      transform: translateY(-2px) scale(1.04);
+      z-index: 20;
+    }
+
+    /* Solved Tile */
+    .crossword-tile.word-solved {
+      background-color: #4E8B56 !important;
+      border-color: #3C7043 !important;
+      box-shadow: 0 3px 0 0 #2E5834 !important;
+      color: #FFFFFF !important;
+    }
+    .crossword-tile.word-solved input {
+      color: #FFFFFF !important;
+    }
+    .crossword-tile.word-solved .tile-number {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Active Cell inside Solved Tile */
+    .crossword-tile.active-cell.word-solved {
+      background-color: #3C7043 !important;
+      border-color: #18181B !important;
+      box-shadow: 0 4px 0 0 #18181B !important;
+    }
+
+    /* Error State */
+    .crossword-tile.incorrect-cell {
+      background-color: #FEF2F2 !important;
+      border-color: #EF4444 !important;
+      box-shadow: 0 3px 0 0 #DC2626 !important;
+      color: #991B1B !important;
+      animation: gentleShake 0.38s ease;
+    }
+
+    @keyframes gentleShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+
+    /* Keyboard Button */
+    .key-btn {
+      background: #FFFFFF;
+      border: 1.5px solid #E2DEC9;
+      box-shadow: 0 2px 0 0 #D0CABA;
+      border-radius: 6px;
+      font-weight: 700;
+      color: #292524;
+      transition: all 0.08s ease;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    .key-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 0 #D0CABA;
+    }
+
+    /* Clue List item */
+    .clue-item {
+      transition: all 0.15s ease;
+      border-radius: 6px;
+    }
+    .clue-item.active-clue {
+      background-color: #EDE8D8;
+      font-weight: 600;
+    }
+    .clue-item.solved {
+      opacity: 0.35;
+    }
+    .clue-item.solved .clue-body {
+      text-decoration: line-through;
+    }
+
+    /* Custom thin scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #D5CEBA;
+      border-radius: 4px;
+    }
+
+    /* PIN input boxes */
+    .pin-box {
+      width: 46px;
+      height: 52px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      border: 2px solid #D5CEBA;
+      border-radius: 10px;
+      background: #FFFFFF;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+      transition: border-color 0.15s;
+    }
+    .pin-box:focus {
+      border-color: #1C1917;
+      outline: none;
+    }
+
+    /* Test Mode Active Styling */
+    body.test-mode-active {
+      background-color: #F3EFE6 !important;
+    }
+
+    @media print {
+      body { background: white !important; color: black !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .crossword-tile { border-color: black !important; box-shadow: none !important; background: transparent !important; }
+      .crossword-tile.word-solved { background: transparent !important; color: black !important; }
+      .crossword-tile.word-solved input { color: black !important; }
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col antialiased bg-[#F8F6F0] selection:bg-amber-100 overflow-hidden unselectable">
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING LUXURY PILL HEADER -->
+  <!-- ========================================================================= -->
+  <header class="shrink-0 px-4 pt-2.5 pb-1 z-30 no-print">
+    <div class="max-w-5xl mx-auto h-11 bg-white/80 backdrop-blur-md border border-[#E5E0CF] rounded-full px-3 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
+      
+      <!-- Mode Tabs -->
+      <div id="nav-tabs-container" class="flex items-center bg-[#F1EDE2] p-0.5 rounded-full text-xs font-semibold">
+        <button id="tab-play" onclick="handleTabClick('play')" class="px-3 py-1 rounded-full bg-white text-stone-900 shadow-2xs transition">
+          Play
+        </button>
+        <button id="tab-edit" onclick="handleTabClick('edit')" class="px-3 py-1 rounded-full text-stone-600 hover:text-stone-900 transition flex items-center gap-1">
+          <span>Edit</span>
+          <span id="tab-edit-lock" class="text-[9px] text-stone-400">🔒</span>
+        </button>
+        <button id="tab-print" onclick="handleTabClick('print')" class="px-3 py-1 rounded-full text-stone-600 hover:text-stone-900 transition">
+          Print
+        </button>
+        <button id="tab-sheets" onclick="handleTabClick('sheets')" class="px-3 py-1 rounded-full text-stone-600 hover:text-stone-900 transition hidden sm:inline-flex items-center gap-1">
+          <span>Sheets</span>
+          <span id="tab-sheets-lock" class="text-[9px] text-stone-400">🔒</span>
+        </button>
+      </div>
+
+      <!-- Center App Identity / Title -->
+      <div class="text-center flex items-center gap-1.5">
+        <span class="text-sm">🌍</span>
+        <span class="font-sans font-bold tracking-widest text-xs sm:text-sm uppercase text-stone-900">LANGUAGE WEEK</span>
+      </div>
+
+      <!-- Right Utility Actions (Anti-Cheat Test Mode, Teacher PIN, Sound) -->
+      <div class="flex items-center gap-1.5">
+        <button id="proctor-btn" onclick="handleProctorToggle()" class="h-7 px-2.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1 shadow-2xs" title="Start Anti-Cheat Classroom Test">
+          <span id="proctor-btn-icon">🛡️</span>
+          <span id="proctor-btn-text" class="text-[11px]">Class Test</span>
+        </button>
+        <button id="teacher-lock-btn" onclick="toggleTeacherLock()" class="h-7 px-2 rounded-full text-xs font-semibold bg-[#F5F2E9] hover:bg-[#EBE5D6] text-stone-700 transition flex items-center gap-1" title="Teacher PIN Protection">
+          <span id="lock-status-icon">🔒</span>
+          <span id="lock-status-text" class="hidden md:inline text-[11px]">PIN</span>
+        </button>
+        <button id="sound-btn" onclick="toggleSound()" class="w-7 h-7 rounded-full text-stone-600 hover:bg-[#F1EDE2] transition flex items-center justify-center text-xs" title="Sound Effects">
+          <span id="sound-icon">🔊</span>
+        </button>
+        <button onclick="sharePuzzle()" class="w-7 h-7 rounded-full text-stone-600 hover:bg-[#F1EDE2] transition flex items-center justify-center text-xs" title="Share Link">
+          🔗
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Anti-Cheat Test Mode Active Status Banner -->
+  <div id="test-mode-banner" class="max-w-5xl mx-auto w-full px-4 hidden no-print">
+    <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl px-4 py-1.5 flex items-center justify-between text-xs shadow-md mt-1">
+      <div class="flex items-center gap-3">
+        <span class="font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+          🛡️ TEST IN PROGRESS
+        </span>
+        <span id="test-student-name" class="font-medium bg-black/20 px-2 py-0.5 rounded text-[11px]">Student</span>
+        <span class="font-mono font-bold text-amber-100" id="test-live-timer">⏱️ 00:00</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="test-blur-counter" class="font-bold bg-white/20 px-2 py-0.5 rounded text-[11px]">
+          Tab Switches: 0
+        </span>
+        <button onclick="exitTestModeRequest()" class="bg-white text-stone-900 font-bold px-2.5 py-0.5 rounded hover:bg-stone-100 transition text-[11px] shadow-2xs">
+          End Test (Teacher)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimal Toast Notification -->
+  <div id="toast" class="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 opacity-0 -translate-y-2 transition-all duration-200 pointer-events-none bg-stone-900 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+    <span id="toast-icon">✨</span>
+    <span id="toast-msg">Ready</span>
+  </div>
+
+  <!-- Main Viewport -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-2 flex flex-col min-h-0 overflow-hidden">
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: SINGLE-SCREEN SOLVER -->
+    <!-- ========================================================================= -->
+    <div id="view-play" class="w-full h-full flex flex-col min-h-0">
+      
+      <!-- Top Title & Solved Capsule -->
+      <div class="w-full flex items-center justify-between pb-1.5 shrink-0">
+        <div class="flex items-baseline gap-2 truncate">
+          <h2 id="play-title" class="font-bold text-base sm:text-lg text-stone-900 tracking-tight">International Language Week</h2>
+          <span id="play-subtitle" class="font-serif italic text-stone-500 text-xs hidden sm:inline truncate">Explore global words, greetings, and communication</span>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <div class="bg-white border border-[#E2DEC9] px-2.5 py-0.5 rounded-full text-xs font-bold text-stone-700 shadow-2xs flex items-center gap-1.5">
+            <span id="progress-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="play-counter-badge">0 / 0 Solved</span>
+          </div>
+          <button onclick="checkAnswers()" class="px-3 py-1 rounded-full bg-[#4E8B56] hover:bg-[#3E7345] active:scale-95 text-white font-bold text-xs shadow-[0_2px_0_0_#2E5834] transition">
+            Check
+          </button>
+          <button id="hint-action-btn" onclick="handleHintClick()" class="px-2.5 py-1 rounded-full bg-white hover:bg-stone-50 border border-[#E2DEC9] text-stone-700 font-bold text-xs shadow-[0_2px_0_0_#D5CEBA] transition flex items-center gap-1">
+            <span>Hint</span>
+            <span id="hint-lock-icon" class="text-[9px] text-stone-400">🔒</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Play Area (Side-by-Side Grid & Editorial Clues) -->
+      <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0">
+        
+        <!-- Left 7 Cols: Active Clue Capsule + Tactile Grid -->
+        <div class="md:col-span-7 flex flex-col items-center justify-between min-h-0 bg-white/70 backdrop-blur-xs rounded-2xl p-3 border border-[#E5E0CF] shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+          
+          <!-- Active Clue Capsule -->
+          <div class="w-full max-w-md bg-white border border-[#E2DEC9] rounded-xl p-2 flex items-center justify-between gap-2 shadow-[0_2px_0_0_#ECE8D9] shrink-0 unselectable">
+            <button onclick="jumpPrevClue()" class="w-7 h-7 rounded-lg bg-[#FAF8F5] hover:bg-[#EDE8D8] text-stone-600 flex items-center justify-center text-xs font-bold transition shrink-0">
+              ◀
+            </button>
+            <div class="text-center truncate px-1 flex-1 cursor-pointer select-none" onclick="toggleDirection()">
+              <span id="active-clue-badge" class="font-bold text-xs bg-stone-900 text-white px-2 py-0.5 rounded-md mr-1.5 shadow-2xs">1A</span>
+              <span id="active-clue-text" class="text-xs sm:text-sm text-stone-800 font-medium tracking-tight">Loading clue...</span>
+            </div>
+            <button onclick="jumpNextClue()" class="w-7 h-7 rounded-lg bg-[#FAF8F5] hover:bg-[#EDE8D8] text-stone-600 flex items-center justify-center text-xs font-bold transition shrink-0">
+              ▶
+            </button>
+          </div>
+
+          <!-- Crossword Grid (Scales dynamically, 0 black voids, pure tactile tiles) -->
+          <div class="flex-1 flex items-center justify-center w-full min-h-0 py-2 overflow-auto">
+            <div id="grid-container" class="inline-block bg-transparent p-1 unselectable">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Direction Switcher & Reset -->
+          <div class="w-full flex items-center justify-between text-xs text-stone-500 pt-1 shrink-0 border-t border-[#F1EDE2]">
+            <div class="flex items-center gap-2">
+              <span class="text-stone-400">Typing:</span>
+              <button onclick="toggleDirection()" class="font-bold px-2.5 py-0.5 rounded-md bg-white border border-[#E2DEC9] text-stone-800 shadow-[0_1.5px_0_0_#D5CEBA] hover:bg-stone-50 transition active:translate-y-0.5">
+                <span id="dir-label">ACROSS ➡️</span>
+              </button>
+              <span class="hidden lg:inline text-stone-400 text-[11px]">(Press Space or tap tile to flip)</span>
+            </div>
+            <button id="clear-grid-btn" onclick="resetPuzzleInputs()" class="text-stone-400 hover:text-stone-700 underline text-xs">Clear Grid</button>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Clue Panel -->
+        <div class="md:col-span-5 flex flex-col min-h-0 bg-white/70 backdrop-blur-xs rounded-2xl p-3.5 border border-[#E5E0CF] shadow-[0_2px_12px_rgba(0,0,0,0.02)] unselectable">
+          
+          <div class="flex-1 grid grid-cols-2 gap-4 min-h-0">
+            <!-- Across Column -->
+            <div class="flex flex-col min-h-0">
+              <div class="flex items-center justify-between pb-1.5 border-b border-[#EAE5D5] mb-2 shrink-0">
+                <h3 class="font-sans font-bold text-xs uppercase tracking-wider text-stone-500">Across</h3>
+                <span id="across-solved-count" class="text-[10px] font-bold text-[#4E8B56]"></span>
+              </div>
+              <ul id="play-across-clues" class="flex-1 space-y-1 text-xs text-stone-700 overflow-y-auto custom-scroll pr-1 unselectable"></ul>
+            </div>
+
+            <!-- Down Column -->
+            <div class="flex flex-col min-h-0">
+              <div class="flex items-center justify-between pb-1.5 border-b border-[#EAE5D5] mb-2 shrink-0">
+                <h3 class="font-sans font-bold text-xs uppercase tracking-wider text-stone-500">Down</h3>
+                <span id="down-solved-count" class="text-[10px] font-bold text-[#4E8B56]"></span>
+              </div>
+              <ul id="play-down-clues" class="flex-1 space-y-1 text-xs text-stone-700 overflow-y-auto custom-scroll pr-1 unselectable"></ul>
+            </div>
+          </div>
+
+          <!-- Bottom Soft Tip / Anti-Cheat Indicator -->
+          <div class="pt-2 mt-2 border-t border-[#F1EDE2] text-[11px] text-stone-400 flex items-center justify-between shrink-0">
+            <span id="footer-status-msg">🛡️ Anti-Cheat Protected</span>
+            <span class="font-serif italic text-stone-500">Language Week</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Integrated Touch Keyboard Drawer -->
+      <div id="touch-keyboard" class="mt-2 shrink-0 hidden sm:flex flex-col items-center gap-1 max-w-lg mx-auto w-full unselectable">
+        <div class="flex gap-1 w-full justify-center">
+          <button onclick="handleVirtualKey('Q')" class="key-btn h-8 flex-1 text-xs">Q</button>
+          <button onclick="handleVirtualKey('W')" class="key-btn h-8 flex-1 text-xs">W</button>
+          <button onclick="handleVirtualKey('E')" class="key-btn h-8 flex-1 text-xs">E</button>
+          <button onclick="handleVirtualKey('R')" class="key-btn h-8 flex-1 text-xs">R</button>
+          <button onclick="handleVirtualKey('T')" class="key-btn h-8 flex-1 text-xs">T</button>
+          <button onclick="handleVirtualKey('Y')" class="key-btn h-8 flex-1 text-xs">Y</button>
+          <button onclick="handleVirtualKey('U')" class="key-btn h-8 flex-1 text-xs">U</button>
+          <button onclick="handleVirtualKey('I')" class="key-btn h-8 flex-1 text-xs">I</button>
+          <button onclick="handleVirtualKey('O')" class="key-btn h-8 flex-1 text-xs">O</button>
+          <button onclick="handleVirtualKey('P')" class="key-btn h-8 flex-1 text-xs">P</button>
+        </div>
+        <div class="flex gap-1 w-[92%] justify-center">
+          <button onclick="handleVirtualKey('A')" class="key-btn h-8 flex-1 text-xs">A</button>
+          <button onclick="handleVirtualKey('S')" class="key-btn h-8 flex-1 text-xs">S</button>
+          <button onclick="handleVirtualKey('D')" class="key-btn h-8 flex-1 text-xs">D</button>
+          <button onclick="handleVirtualKey('F')" class="key-btn h-8 flex-1 text-xs">F</button>
+          <button onclick="handleVirtualKey('G')" class="key-btn h-8 flex-1 text-xs">G</button>
+          <button onclick="handleVirtualKey('H')" class="key-btn h-8 flex-1 text-xs">H</button>
+          <button onclick="handleVirtualKey('J')" class="key-btn h-8 flex-1 text-xs">J</button>
+          <button onclick="handleVirtualKey('K')" class="key-btn h-8 flex-1 text-xs">K</button>
+          <button onclick="handleVirtualKey('L')" class="key-btn h-8 flex-1 text-xs">L</button>
+        </div>
+        <div class="flex gap-1 w-full justify-center">
+          <button onclick="toggleDirection()" class="key-btn h-8 px-2.5 text-[11px] font-medium bg-[#F1EDE2]">Dir</button>
+          <button onclick="handleVirtualKey('Z')" class="key-btn h-8 flex-1 text-xs">Z</button>
+          <button onclick="handleVirtualKey('X')" class="key-btn h-8 flex-1 text-xs">X</button>
+          <button onclick="handleVirtualKey('C')" class="key-btn h-8 flex-1 text-xs">C</button>
+          <button onclick="handleVirtualKey('V')" class="key-btn h-8 flex-1 text-xs">V</button>
+          <button onclick="handleVirtualKey('B')" class="key-btn h-8 flex-1 text-xs">B</button>
+          <button onclick="handleVirtualKey('N')" class="key-btn h-8 flex-1 text-xs">N</button>
+          <button onclick="handleVirtualKey('M')" class="key-btn h-8 flex-1 text-xs">M</button>
+          <button onclick="handleVirtualKey('BACKSPACE')" class="key-btn h-8 px-3 text-xs bg-[#F1EDE2]">⌫</button>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: TEACHER / PARENT GENERATOR & EDITOR VIEW (PIN PROTECTED) -->
+    <!-- ========================================================================= -->
+    <div id="view-edit" class="w-full h-full hidden flex-col min-h-0 overflow-y-auto custom-scroll space-y-4">
+      <div class="flex items-center justify-between border-b border-[#E5E0CF] pb-2 shrink-0">
+        <div>
+          <h2 class="font-bold text-base text-stone-900 flex items-center gap-2">
+            <span>Puzzle Studio & Generator</span>
+            <span class="text-xs bg-[#EAF2EC] text-[#346E3C] font-bold px-2 py-0.5 rounded-full">Unlocked</span>
+          </h2>
+          <p class="text-xs text-stone-500">Create custom crossword puzzles from vocabulary lists.</p>
+        </div>
+        <button onclick="lockTeacherMode()" class="text-xs font-bold px-3 py-1 rounded-full bg-white border border-[#E2DEC9] hover:bg-stone-50 text-stone-700 transition shadow-2xs">
+          🔒 Lock Mode
+        </button>
+      </div>
+
+      <!-- Preset Capsule Buttons -->
+      <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+        <span class="text-xs font-semibold text-stone-500 mr-1">Presets:</span>
+        <button onclick="loadPreset('languages')" class="text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition shadow-2xs">🌍 Language Week</button>
+        <button onclick="loadPreset('animals')" class="text-xs font-medium px-2.5 py-1 rounded-full border border-[#E2DEC9] bg-white hover:bg-stone-50 transition shadow-2xs">🦁 Animals</button>
+        <button onclick="loadPreset('space')" class="text-xs font-medium px-2.5 py-1 rounded-full border border-[#E2DEC9] bg-white hover:bg-stone-50 transition shadow-2xs">🚀 Space</button>
+        <button onclick="loadPreset('fruits')" class="text-xs font-medium px-2.5 py-1 rounded-full border border-[#E2DEC9] bg-white hover:bg-stone-50 transition shadow-2xs">🍎 Fruits</button>
+        <button onclick="loadPreset('coding')" class="text-xs font-medium px-2.5 py-1 rounded-full border border-[#E2DEC9] bg-white hover:bg-stone-50 transition shadow-2xs">💻 Tech</button>
+        <button onclick="loadPreset('fantasy')" class="text-xs font-medium px-2.5 py-1 rounded-full border border-[#E2DEC9] bg-white hover:bg-stone-50 transition shadow-2xs">🏰 Fantasy</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
+        <div class="space-y-2.5 flex flex-col">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-stone-700 uppercase mb-0.5">Title</label>
+              <input type="text" id="input-title" value="International Language Week" class="w-full px-2.5 py-1.5 text-xs border border-[#E2DEC9] rounded-lg focus:border-stone-900 focus:outline-none bg-white">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-stone-700 uppercase mb-0.5">Subtitle</label>
+              <input type="text" id="input-subtitle" value="Explore global words, greetings, and communication" class="w-full px-2.5 py-1.5 text-xs border border-[#E2DEC9] rounded-lg focus:border-stone-900 focus:outline-none bg-white">
+            </div>
+          </div>
+
+          <div class="flex-1 flex flex-col">
+            <label class="block text-[11px] font-bold text-stone-700 uppercase mb-0.5">Words & Clues <span class="font-normal text-stone-400 lowercase">(WORD: Clue)</span></label>
+            <textarea id="input-words" rows="8" class="w-full flex-1 p-2 text-xs font-mono border border-[#E2DEC9] rounded-lg focus:border-stone-900 focus:outline-none bg-white leading-relaxed"></textarea>
+          </div>
+
+          <div class="flex items-center gap-2 pt-1">
+            <button onclick="handleGenerateClick()" class="flex-1 bg-[#4E8B56] hover:bg-[#3E7345] text-white font-bold text-xs py-2 px-3 rounded-lg shadow-[0_2px_0_0_#2E5834] transition">
+              Build Crossword
+            </button>
+            <button onclick="handleGenerateClick(true)" class="border border-[#E2DEC9] bg-white hover:bg-stone-50 text-stone-800 font-bold text-xs py-2 px-3 rounded-lg shadow-2xs transition">
+              Re-roll
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="bg-white/80 border border-[#E2DEC9] rounded-xl p-3 flex flex-col justify-between min-h-0 shadow-2xs">
+          <div>
+            <div class="flex items-center justify-between mb-2 border-b border-[#EAE5D5] pb-1.5">
+              <span class="text-xs font-bold text-stone-600 uppercase tracking-wide">Layout Preview</span>
+              <span id="gen-stats-badge" class="text-[11px] font-mono text-stone-500"></span>
+            </div>
+            <div id="editor-preview-container" class="flex items-center justify-center min-h-[180px] overflow-auto py-2"></div>
+          </div>
+          <div class="pt-2 border-t border-[#EAE5D5] text-right">
+            <button onclick="switchTab('play')" class="text-xs font-bold text-[#4E8B56] hover:underline">
+              Play this puzzle →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 3: PRINTABLE WORKSHEET VIEW (PIN PROTECTED ANSWER KEY) -->
+    <!-- ========================================================================= -->
+    <div id="view-print" class="w-full h-full hidden flex-col min-h-0 overflow-y-auto custom-scroll space-y-4">
+      <div class="no-print bg-white/80 border border-[#E2DEC9] rounded-xl p-3 flex items-center justify-between shrink-0 shadow-2xs">
+        <span class="text-xs font-bold text-stone-700">Printable Paper Worksheet</span>
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-1.5 text-xs font-medium text-stone-700 cursor-pointer select-none">
+            <input type="checkbox" id="print-answer-key-toggle" onchange="handleAnswerKeyToggle(this)" class="rounded text-stone-900 focus:ring-0">
+            <span>Teacher Answer Key</span>
+            <span id="answer-key-lock" class="text-[9px] text-stone-400">🔒</span>
+          </label>
+          <button onclick="window.print()" class="bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-sm transition">
+            Print Page
+          </button>
+        </div>
+      </div>
+
+      <div id="print-sheet" class="bg-white p-8 border border-stone-300 rounded-xl max-w-2xl mx-auto text-black">
+        <div class="border-b-2 border-black pb-3 mb-5">
+          <div class="flex items-start justify-between">
+            <div>
+              <h1 id="print-title" class="font-bold text-xl uppercase tracking-wide">International Language Week</h1>
+              <p id="print-subtitle" class="text-xs text-stone-600 mt-0.5">Explore global words, greetings, and communication</p>
+            </div>
+            <div id="print-answer-key-badge" class="hidden border-2 border-black text-xs font-bold px-2 py-0.5 uppercase">
+              Answer Key
+            </div>
+          </div>
+          <div class="flex justify-between text-xs mt-5 pt-1 text-stone-700">
+            <span>Name: ______________________</span>
+            <span>Date: ____________</span>
+            <span>Score: _____ / _____</span>
+          </div>
+        </div>
+
+        <div class="flex justify-center my-6">
+          <div id="print-grid-container" class="inline-block p-0.5"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 mt-6 pt-4 border-t border-stone-300 text-xs">
+          <div>
+            <h3 class="font-bold uppercase border-b border-black pb-1 mb-2">Across</h3>
+            <ul id="print-across-clues" class="space-y-1"></ul>
+          </div>
+          <div>
+            <h3 class="font-bold uppercase border-b border-black pb-1 mb-2">Down</h3>
+            <ul id="print-down-clues" class="space-y-1"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 4: GOOGLE SHEETS SCRIPT (PIN PROTECTED) -->
+    <!-- ========================================================================= -->
+    <div id="view-sheets" class="w-full h-full hidden flex-col min-h-0 overflow-y-auto custom-scroll space-y-4">
+      <div class="border-b border-[#E5E0CF] pb-2 shrink-0">
+        <h2 class="font-bold text-base text-stone-900">Google Sheets Code</h2>
+        <p class="text-xs text-stone-500">Copy this code into your Google Sheets Apps Script editor.</p>
+      </div>
+
+      <div class="bg-white/80 border border-[#E2DEC9] rounded-xl p-4 space-y-3 shadow-2xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-stone-500 font-bold">Code.gs</span>
+          <button onclick="copyGasCode()" class="text-xs font-bold px-3 py-1 bg-stone-900 hover:bg-stone-800 text-white rounded-lg shadow-sm transition">
+            Copy Script
+          </button>
+        </div>
+        <pre class="bg-stone-900 text-stone-100 p-3 rounded-lg text-[11px] font-mono overflow-x-auto max-h-80 leading-relaxed select-all" id="gas-code-block"></pre>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- START CLASSROOM TEST MODAL (PROCTOR SETUP) -->
+  <!-- ========================================================================= -->
+  <div id="proctor-setup-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border border-[#E5E0CF]">
+      <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto mb-2.5 text-xl font-bold border border-amber-300">
+        🛡️
+      </div>
+      <h3 class="font-bold text-lg text-stone-900 tracking-tight mb-1">Classroom Test Mode</h3>
+      <p class="text-xs text-stone-500 mb-4 leading-relaxed">
+        Enables full-screen lock, blocks copy/paste & DevTools, and records any tab-switching attempts.
+      </p>
+
+      <div class="space-y-3 text-left mb-5">
+        <div>
+          <label class="block text-[11px] font-bold text-stone-700 uppercase mb-1">Student Name / ID</label>
+          <input type="text" id="proctor-student-input" placeholder="e.g. Alex M." class="w-full px-3 py-2 text-xs border border-[#D5CEBA] rounded-xl focus:border-stone-900 focus:outline-none bg-white">
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 space-y-1">
+          <p class="font-bold flex items-center gap-1"><span>🔒</span> Anti-Cheat Active:</p>
+          <ul class="list-disc list-inside text-amber-800 space-y-0.5">
+            <li>Tab switches will be logged & reported</li>
+            <li>Clipboard copy/cut disabled</li>
+            <li>Teacher PIN required to exit test</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeProctorModal()" class="flex-1 border border-[#E2DEC9] bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs py-2.5 rounded-xl transition">
+          Cancel
+        </button>
+        <button onclick="startTestMode()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-md transition">
+          Start Test 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- VERIFIED STUDENT CERTIFICATE & SCORECARD MODAL -->
+  <!-- ========================================================================= -->
+  <div id="test-scorecard-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl p-7 max-w-sm w-full text-center shadow-2xl border border-[#E5E0CF] relative">
+      <div class="w-14 h-14 bg-[#4E8B56] text-white rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-[0_3px_0_0_#2E5834]">
+        🎓
+      </div>
+      <h2 class="font-bold text-xl text-stone-900 tracking-tight mb-0.5">Official Test Result</h2>
+      <p class="text-xs text-stone-400 mb-4 font-serif italic" id="cert-timestamp">Verified Classroom Submission</p>
+
+      <!-- Scorecard Box -->
+      <div class="bg-[#FAF8F5] border border-[#E2DEC9] rounded-2xl p-4 text-left space-y-2 mb-4">
+        <div class="flex justify-between items-center text-xs pb-1.5 border-b border-[#EAE5D5]">
+          <span class="text-stone-500 font-medium">Student:</span>
+          <span id="cert-student-name" class="font-bold text-stone-900">Alex</span>
+        </div>
+        <div class="flex justify-between items-center text-xs pb-1.5 border-b border-[#EAE5D5]">
+          <span class="text-stone-500 font-medium">Time Taken:</span>
+          <span id="cert-time-taken" class="font-mono font-bold text-stone-900">03:45</span>
+        </div>
+        <div class="flex justify-between items-center text-xs pb-1.5 border-b border-[#EAE5D5]">
+          <span class="text-stone-500 font-medium">Accuracy:</span>
+          <span id="cert-accuracy" class="font-bold text-[#4E8B56]">10 / 10 (100%)</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-stone-500 font-medium">Integrity Check:</span>
+          <span id="cert-integrity-badge" class="font-bold px-2 py-0.5 rounded text-[11px]"></span>
+        </div>
+      </div>
+
+      <div class="text-[10px] font-mono text-stone-400 mb-4" id="cert-hash-code">
+        AUTH: ILW-VERIFIED-9824
+      </div>
+
+      <button onclick="closeScorecardModal()" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs py-3 rounded-xl shadow-md transition">
+        Done (Teacher Return)
+      </button>
+    </div>
+  </div>
+
+  <!-- Standard Victory Modal (Normal Mode) -->
+  <div id="victory-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/35 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-3xl p-7 max-w-xs w-full text-center shadow-2xl border border-[#E5E0CF]">
+      <div class="w-14 h-14 bg-[#4E8B56] text-white rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-[0_3px_0_0_#2E5834]">
+        🌍
+      </div>
+      <h2 class="font-bold text-xl text-stone-900 mb-1 tracking-tight">Félicitations!</h2>
+      <p class="text-stone-500 font-serif italic text-xs mb-5">You solved all the International Language Week clues!</p>
+      <button onclick="closeVictoryModal()" class="w-full bg-[#4E8B56] hover:bg-[#3E7345] text-white font-bold text-xs py-3 rounded-xl shadow-[0_2px_0_0_#2E5834] transition">
+        Play Again
+      </button>
+    </div>
+  </div>
+
+  <!-- Teacher PIN Modal -->
+  <div id="pin-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/30 backdrop-blur-sm hidden">
+    <div id="pin-modal-card" class="bg-white rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl border border-[#E5E0CF] relative">
+      <button onclick="closePinModal()" class="absolute top-3 right-3 text-stone-400 hover:text-stone-700 text-sm font-bold">✕</button>
+      
+      <div class="w-10 h-10 bg-[#FAF8F5] text-stone-800 rounded-full flex items-center justify-center mx-auto mb-2 text-lg border border-[#E2DEC9]">
+        🔒
+      </div>
+      
+      <h3 class="font-bold text-sm text-stone-900 uppercase tracking-wider mb-0.5">Teacher Access</h3>
+      <p class="text-xs text-stone-500 mb-4" id="pin-modal-desc">Enter 4-digit PIN to unlock</p>
+
+      <!-- 4 PIN Inputs -->
+      <div class="flex justify-center gap-2 mb-4" id="pin-inputs-container">
+        <input type="password" maxlength="1" id="pin-0" class="pin-box" inputmode="numeric" pattern="[0-9]*">
+        <input type="password" maxlength="1" id="pin-1" class="pin-box" inputmode="numeric" pattern="[0-9]*">
+        <input type="password" maxlength="1" id="pin-2" class="pin-box" inputmode="numeric" pattern="[0-9]*">
+        <input type="password" maxlength="1" id="pin-3" class="pin-box" inputmode="numeric" pattern="[0-9]*">
+      </div>
+
+      <div id="pin-error" class="text-xs text-red-600 font-bold mb-3 hidden">
+        Incorrect PIN. Try again.
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closePinModal()" class="flex-1 border border-[#E2DEC9] bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs py-2.5 rounded-xl transition">
+          Cancel
+        </button>
+        <button onclick="verifyEnteredPin()" class="flex-1 bg-[#4E8B56] hover:bg-[#3E7345] text-white font-bold text-xs py-2.5 rounded-xl shadow-[0_2px_0_0_#2E5834] transition">
+          Unlock
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="py-1.5 text-center text-[10px] text-stone-400 border-t border-[#EAE5D5] bg-white/60 shrink-0 no-print">
+    International Language Week • Crossword Studio
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT & ANTI-CHEAT ENGINE -->
+  <!-- ========================================================================= -->
+  <script>
+    // --- SECURITY & PIN MANAGEMENT ---
+    const TEACHER_PIN = "2626";
+    let isTeacherUnlocked = false;
+    let pendingUnlockAction = null;
+
+    // Anti-Cheat Proctor State
+    let isTestMode = false;
+    let testStudentName = "";
+    let testStartTime = null;
+    let testTimerInterval = null;
+    let tabSwitchCount = 0;
+
+    function checkTeacherAccess(actionCallback, description = "Enter PIN to unlock this feature") {
+      if (isTeacherUnlocked) {
+        if (typeof actionCallback === 'function') actionCallback();
+        return true;
+      }
+      pendingUnlockAction = actionCallback;
+      openPinModal(description);
+      return false;
+    }
+
+    function openPinModal(desc = "Enter 4-digit PIN to unlock") {
+      document.getElementById('pin-modal-desc').textContent = desc;
+      document.getElementById('pin-error').classList.add('hidden');
+      for (let i = 0; i < 4; i++) {
+        const inp = document.getElementById(`pin-${i}`);
+        inp.value = '';
+        inp.classList.remove('border-red-500');
+      }
+      document.getElementById('pin-modal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('pin-0').focus(), 50);
+    }
+
+    function closePinModal() {
+      document.getElementById('pin-modal').classList.add('hidden');
+      pendingUnlockAction = null;
+      if (!isTeacherUnlocked) {
+        document.getElementById('print-answer-key-toggle').checked = false;
+        renderPrintView();
+      }
+    }
+
+    function verifyEnteredPin() {
+      const p0 = document.getElementById('pin-0').value;
+      const p1 = document.getElementById('pin-1').value;
+      const p2 = document.getElementById('pin-2').value;
+      const p3 = document.getElementById('pin-3').value;
+      const entered = `${p0}${p1}${p2}${p3}`;
+
+      if (entered === TEACHER_PIN) {
+        isTeacherUnlocked = true;
+        updateTeacherLockUI();
+        document.getElementById('pin-modal').classList.add('hidden');
+        showToast('🔓 Teacher mode unlocked', '🔓');
+        if (typeof pendingUnlockAction === 'function') {
+          const action = pendingUnlockAction;
+          pendingUnlockAction = null;
+          action();
+        }
+      } else {
+        const card = document.getElementById('pin-modal-card');
+        document.getElementById('pin-error').classList.remove('hidden');
+        for (let i = 0; i < 4; i++) {
+          const inp = document.getElementById(`pin-${i}`);
+          inp.value = '';
+          inp.classList.add('border-red-500');
+        }
+        document.getElementById('pin-0').focus();
+        card.classList.add('incorrect-cell');
+        setTimeout(() => card.classList.remove('incorrect-cell'), 400);
+      }
+    }
+
+    document.querySelectorAll('.pin-box').forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < 3) {
+          document.getElementById(`pin-${index + 1}`).focus();
+        }
+        if (index === 3 && e.target.value.length === 1) {
+          verifyEnteredPin();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+          document.getElementById(`pin-${index - 1}`).focus();
+        }
+        if (e.key === 'Enter') {
+          verifyEnteredPin();
+        }
+      });
+    });
+
+    function toggleTeacherLock() {
+      if (isTeacherUnlocked) {
+        lockTeacherMode();
+      } else {
+        checkTeacherAccess(() => {}, "Enter PIN 2626 to unlock Teacher Mode");
+      }
+    }
+
+    function lockTeacherMode() {
+      isTeacherUnlocked = false;
+      updateTeacherLockUI();
+      const editVisible = !document.getElementById('view-edit').classList.contains('hidden');
+      const sheetsVisible = !document.getElementById('view-sheets').classList.contains('hidden');
+      if (editVisible || sheetsVisible) {
+        switchTab('play');
+      }
+      document.getElementById('print-answer-key-toggle').checked = false;
+      renderPrintView();
+      showToast('🔒 Teacher mode locked', '🔒');
+    }
+
+    function updateTeacherLockUI() {
+      const lockBtnIcon = document.getElementById('lock-status-icon');
+      const lockBtnText = document.getElementById('lock-status-text');
+      const tabEditLock = document.getElementById('tab-edit-lock');
+      const tabSheetsLock = document.getElementById('tab-sheets-lock');
+      const answerKeyLock = document.getElementById('answer-key-lock');
+      const hintLockIcon = document.getElementById('hint-lock-icon');
+
+      if (isTeacherUnlocked) {
+        lockBtnIcon.textContent = '🔓';
+        lockBtnText.textContent = 'Unlocked';
+        tabEditLock.textContent = '🔓';
+        tabSheetsLock.textContent = '🔓';
+        answerKeyLock.textContent = '🔓';
+        hintLockIcon.textContent = '🔓';
+      } else {
+        lockBtnIcon.textContent = '🔒';
+        lockBtnText.textContent = 'PIN';
+        tabEditLock.textContent = '🔒';
+        tabSheetsLock.textContent = '🔒';
+        answerKeyLock.textContent = '🔒';
+        hintLockIcon.textContent = '🔒';
+      }
+    }
+
+    // --- ANTI-CHEAT & PROCTOR TEST CONTROLS ---
+    function handleProctorToggle() {
+      if (isTestMode) {
+        exitTestModeRequest();
+      } else {
+        document.getElementById('proctor-student-input').value = '';
+        document.getElementById('proctor-setup-modal').classList.remove('hidden');
+      }
+    }
+
+    function closeProctorModal() {
+      document.getElementById('proctor-setup-modal').classList.add('hidden');
+    }
+
+    function startTestMode() {
+      testStudentName = document.getElementById('proctor-student-input').value.trim() || 'Student';
+      document.getElementById('proctor-setup-modal').classList.add('hidden');
+
+      isTestMode = true;
+      tabSwitchCount = 0;
+      testStartTime = Date.now();
+      document.body.classList.add('test-mode-active');
+
+      // Request fullscreen for kiosk mode
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+
+      // Reset puzzle board for clean test start
+      if (currentPuzzle) {
+        const { width, height } = currentPuzzle;
+        playerGridState = Array(height).fill(null).map(() => Array(width).fill(''));
+        solvedWordsSet.clear();
+        hasWon = false;
+        renderPlayView();
+      }
+
+      // Update UI elements
+      document.getElementById('test-student-name').textContent = testStudentName;
+      document.getElementById('test-blur-counter').textContent = `Tab Switches: 0`;
+      document.getElementById('test-mode-banner').classList.remove('hidden');
+      document.getElementById('proctor-btn-icon').textContent = '⏹️';
+      document.getElementById('proctor-btn-text').textContent = 'Test Active';
+      document.getElementById('proctor-btn').className = "h-7 px-2.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300 transition flex items-center gap-1 shadow-2xs";
+      
+      // Disable tabs & hint during test
+      document.getElementById('nav-tabs-container').classList.add('opacity-40', 'pointer-events-none');
+      document.getElementById('hint-action-btn').classList.add('opacity-40', 'pointer-events-none');
+      document.getElementById('footer-status-msg').textContent = '🛡️ Test Mode Active • Tab switches recorded';
+
+      // Start timer
+      clearInterval(testTimerInterval);
+      testTimerInterval = setInterval(updateLiveTestTimer, 1000);
+      updateLiveTestTimer();
+
+      showToast(`🛡️ Test Mode Active for ${testStudentName}`, '🚀');
+    }
+
+    function updateLiveTestTimer() {
+      if (!testStartTime) return;
+      const elapsedSec = Math.floor((Date.now() - testStartTime) / 1000);
+      const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+      const secs = String(elapsedSec % 60).padStart(2, '0');
+      document.getElementById('test-live-timer').textContent = `⏱️ ${mins}:${secs}`;
+    }
+
+    function exitTestModeRequest() {
+      checkTeacherAccess(() => {
+        stopTestMode(false);
+      }, "Enter Teacher PIN to end Test Mode");
+    }
+
+    function stopTestMode(showCard = false) {
+      isTestMode = false;
+      clearInterval(testTimerInterval);
+      document.body.classList.remove('test-mode-active');
+      document.getElementById('test-mode-banner').classList.add('hidden');
+
+      document.getElementById('proctor-btn-icon').textContent = '🛡️';
+      document.getElementById('proctor-btn-text').textContent = 'Class Test';
+      document.getElementById('proctor-btn').className = "h-7 px-2.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1 shadow-2xs";
+
+      document.getElementById('nav-tabs-container').classList.remove('opacity-40', 'pointer-events-none');
+      document.getElementById('hint-action-btn').classList.remove('opacity-40', 'pointer-events-none');
+      document.getElementById('footer-status-msg').textContent = '🛡️ Anti-Cheat Protected';
+
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+
+      if (showCard) {
+        showOfficialScorecard();
+      } else {
+        showToast('Test Mode Ended by Teacher', '🔒');
+      }
+    }
+
+    function showOfficialScorecard() {
+      const elapsedSec = Math.floor((Date.now() - testStartTime) / 1000);
+      const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+      const secs = String(elapsedSec % 60).padStart(2, '0');
+      
+      document.getElementById('cert-student-name').textContent = testStudentName;
+      document.getElementById('cert-time-taken').textContent = `${mins}:${secs}`;
+      document.getElementById('cert-timestamp').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const totalWords = currentPuzzle ? (currentPuzzle.acrossClues.length + currentPuzzle.downClues.length) : 0;
+      document.getElementById('cert-accuracy').textContent = `${totalWords} / ${totalWords} (100% Solved)`;
+
+      const badge = document.getElementById('cert-integrity-badge');
+      if (tabSwitchCount === 0) {
+        badge.textContent = `🟢 Verified Clean (0 Tab Switches)`;
+        badge.className = "font-bold px-2 py-0.5 rounded text-[11px] bg-emerald-100 text-emerald-800";
+      } else {
+        badge.textContent = `⚠️ Flagged (${tabSwitchCount} Tab Switches)`;
+        badge.className = "font-bold px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800";
+      }
+
+      const randomAuth = Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('cert-hash-code').textContent = `AUTH: ILW-${testStudentName.toUpperCase().slice(0,3)}-${randomAuth}-OK`;
+      document.getElementById('test-scorecard-modal').classList.remove('hidden');
+    }
+
+    function closeScorecardModal() {
+      document.getElementById('test-scorecard-modal').classList.add('hidden');
+    }
+
+    // --- TAB SWITCH & BLUR DETECTION ---
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && isTestMode) {
+        tabSwitchCount++;
+        document.getElementById('test-blur-counter').textContent = `Tab Switches: ${tabSwitchCount}`;
+        document.getElementById('test-blur-counter').classList.add('bg-red-500', 'text-white');
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      if (isTestMode) {
+        tabSwitchCount++;
+        document.getElementById('test-blur-counter').textContent = `Tab Switches: ${tabSwitchCount}`;
+        showToast(`⚠️ Tab Switch / Focus Lost (#${tabSwitchCount})`, '⚠️');
+      }
+    });
+
+    // --- ANTI-COPY, ANTI-CLIPBOARD & DEVTOOLS BLOCKING ---
+    document.addEventListener('contextmenu', (e) => {
+      // Block right click context menu to prevent "Inspect Element" or "Search Google"
+      if (!isTeacherUnlocked) {
+        e.preventDefault();
+        showToast('🔒 Right-click disabled (Anti-Cheat)', '🛡️');
+      }
+    });
+
+    document.addEventListener('copy', (e) => {
+      if (!isTeacherUnlocked) {
+        e.preventDefault();
+        showToast('🔒 Copying clue text is disabled', '🛡️');
+      }
+    });
+
+    document.addEventListener('cut', (e) => {
+      if (!isTeacherUnlocked) {
+        e.preventDefault();
+      }
+    });
+
+    // Block keyboard inspect shortcuts (F12, Cmd+Opt+I, Cmd+Opt+J, Cmd+Opt+U, Ctrl+Shift+I)
+    document.addEventListener('keydown', (e) => {
+      if (!isTeacherUnlocked) {
+        if (
+          e.key === 'F12' ||
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+          ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U'))
+        ) {
+          e.preventDefault();
+          showToast('🔒 Developer Tools Disabled', '🛡️');
+        }
+      }
+    });
+
+    function handleTabClick(tabId) {
+      if (isTestMode) {
+        showToast('Finish or exit Test Mode first', '🛡️');
+        return;
+      }
+      if (tabId === 'edit') {
+        checkTeacherAccess(() => switchTab('edit'), "Enter PIN to access Puzzle Editor & Word List");
+      } else if (tabId === 'sheets') {
+        checkTeacherAccess(() => switchTab('sheets'), "Enter PIN to view Google Sheets Code");
+      } else {
+        switchTab(tabId);
+      }
+    }
+
+    function handleAnswerKeyToggle(checkbox) {
+      if (checkbox.checked) {
+        if (!isTeacherUnlocked) {
+          checkbox.checked = false;
+          checkTeacherAccess(() => {
+            checkbox.checked = true;
+            renderPrintView();
+          }, "Enter PIN to view Teacher Answer Key");
+        } else {
+          renderPrintView();
+        }
+      } else {
+        renderPrintView();
+      }
+    }
+
+    function handleHintClick() {
+      if (isTestMode) {
+        showToast('Hints are disabled during test mode', '🔒');
+        return;
+      }
+      checkTeacherAccess(() => {
+        revealLetter();
+      }, "Enter PIN to reveal a hint for this square");
+    }
+
+    // --- PRESETS ---
+    const PRESETS = {
+      languages: {
+        title: "International Language Week",
+        subtitle: "Explore global words, greetings, and communication",
+        words: [
+          { word: "BONJOUR", clue: "French greeting meaning hello or good day" },
+          { word: "HOLA", clue: "Friendly Spanish word for hello" },
+          { word: "ALOHA", clue: "Hawaiian word for love, peace, and hello" },
+          { word: "POLYGLOT", clue: "A person who can speak many different languages" },
+          { word: "TRANSLATE", clue: "To change words from one language into another" },
+          { word: "DIALECT", clue: "A regional variety of a language with unique words" },
+          { word: "FLUENT", clue: "Able to speak or write a language smoothly and easily" },
+          { word: "BRAILLE", clue: "Writing system of raised dots read with fingers" },
+          { word: "ACCENT", clue: "Distinctive way words are pronounced by region" },
+          { word: "IDIOM", clue: "A phrase with a figurative meaning like 'piece of cake'" }
+        ]
+      },
+      animals: {
+        title: "Animal Safari",
+        subtitle: "A delightful word puzzle for curious minds",
+        words: [
+          { word: "ELEPHANT", clue: "Largest land mammal with a long trunk" },
+          { word: "LION", clue: "The brave king of the jungle" },
+          { word: "TIGER", clue: "Big cat with orange fur and black stripes" },
+          { word: "GIRAFFE", clue: "Tallest mammal with a very long neck" },
+          { word: "ZEBRA", clue: "Horse-like animal with black and white stripes" },
+          { word: "MONKEY", clue: "Playful animal that loves climbing and bananas" },
+          { word: "PENGUIN", clue: "Flightless bird that waddles on ice and swims" },
+          { word: "KANGAROO", clue: "Australian animal that hops and carries a joey" },
+          { word: "BEAR", clue: "Furry mammal that loves honey and sleeps in winter" }
+        ]
+      },
+      space: {
+        title: "Cosmic Odyssey",
+        subtitle: "Journey through the stars, planets, and galaxies",
+        words: [
+          { word: "PLANET", clue: "A large round body orbiting a star" },
+          { word: "ROCKET", clue: "A powerful vehicle that launches into space" },
+          { word: "ASTRONAUT", clue: "A person trained to travel in spacecraft" },
+          { word: "GALAXY", clue: "A huge system of billions of stars" },
+          { word: "COMET", clue: "An icy space rock with a glowing tail" },
+          { word: "TELESCOPE", clue: "Tool used to look at distant stars" },
+          { word: "MOON", clue: "Earth's natural satellite in the night sky" },
+          { word: "ORBIT", clue: "The curved path around a star or planet" }
+        ]
+      },
+      fruits: {
+        title: "Fruit Garden",
+        subtitle: "Sweet and tasty fruits from nature's basket",
+        words: [
+          { word: "BANANA", clue: "A long yellow fruit that peels easily" },
+          { word: "APPLE", clue: "Crisp fruit that keeps the doctor away" },
+          { word: "ORANGE", clue: "A round citrus fruit named after a color" },
+          { word: "STRAWBERRY", clue: "Sweet red berry with seeds on the outside" },
+          { word: "PINEAPPLE", clue: "Tropical fruit with spiky skin and yellow flesh" },
+          { word: "MANGO", clue: "Sweet tropical stone fruit" },
+          { word: "GRAPE", clue: "Small round fruit growing in bunches" },
+          { word: "WATERMELON", clue: "Giant green fruit with pink juicy flesh" }
+        ]
+      },
+      coding: {
+        title: "Future Coders",
+        subtitle: "Essential concepts in computing & technology",
+        words: [
+          { word: "COMPUTER", clue: "Electronic machine that processes data" },
+          { word: "KEYBOARD", clue: "Device with buttons used to type" },
+          { word: "ROBOT", clue: "A machine programmable to do tasks" },
+          { word: "INTERNET", clue: "Global network connecting computers" },
+          { word: "PIXEL", clue: "A tiny dot of color on a display" },
+          { word: "MOUSE", clue: "Device used to point and click" },
+          { word: "SCREEN", clue: "Surface where pictures and text appear" },
+          { word: "CODE", clue: "Instructions written for computers" }
+        ]
+      },
+      fantasy: {
+        title: "Fantasy Realm",
+        subtitle: "Castles, mythical spells, and legendary adventures",
+        words: [
+          { word: "DRAGON", clue: "Winged mythical creature that breathes fire" },
+          { word: "CASTLE", clue: "Fortified stone residence of kings" },
+          { word: "WIZARD", clue: "A person with magical powers" },
+          { word: "KNIGHT", clue: "A warrior in shining armor" },
+          { word: "PRINCESS", clue: "The daughter of a monarch" },
+          { word: "MAGIC", clue: "Mysterious supernatural power" },
+          { word: "SWORD", clue: "Blade weapon with a hilt" },
+          { word: "CROWN", clue: "Royal golden headpiece" }
+        ]
+      }
+    };
+
+    let currentPuzzle = null;
+    let playerGridState = [];
+    let selectedCell = { x: 0, y: 0 };
+    let currentDirection = 'across';
+    let solvedWordsSet = new Set();
+    let soundEnabled = true;
+    let hasWon = false;
+
+    // --- ORGANIC MARIMBA / KALIMBA SOUND SYNTHESIZER ---
+    function playMarimba(noteType = 'pop') {
+      if (!soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        if (noteType === 'key') {
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440 + Math.random() * 60, now);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (noteType === 'word') {
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const now = ctx.currentTime + (idx * 0.07);
+            const osc = ctx.createOscillator();
+            const oscHarmonic = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+
+            oscHarmonic.type = 'triangle';
+            oscHarmonic.frequency.setValueAtTime(freq * 2, now);
+
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+            osc.connect(gain);
+            oscHarmonic.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now);
+            oscHarmonic.start(now);
+            osc.stop(now + 0.45);
+            oscHarmonic.stop(now + 0.45);
+          });
+        } else if (noteType === 'victory') {
+          const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+          notes.forEach((freq, idx) => {
+            const now = ctx.currentTime + (idx * 0.1);
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.16, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.6);
+          });
+        }
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
+      showToast(soundEnabled ? 'Sound Enabled' : 'Sound Muted', soundEnabled ? '🔊' : '🔇');
+    }
+
+    // --- CROSSWORD ALGORITHM ---
+    function generateCrossword(wordList, options = {}) {
+      const maxAttempts = options.maxAttempts || 80;
+      let bestResult = null;
+
+      const cleanList = wordList
+        .map(item => ({
+          word: item.word.toUpperCase().replace(/[^A-Z]/g, ''),
+          clue: item.clue || item.word,
+          original: item.word
+        }))
+        .filter(item => item.word.length >= 2);
+
+      if (cleanList.length === 0) return null;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const list = [...cleanList].sort((a, b) => {
+          const lenDiff = b.word.length - a.word.length;
+          if (lenDiff !== 0) return lenDiff + (Math.random() * 3 - 1.5);
+          return Math.random() - 0.5;
+        });
+
+        const GRID_SIZE = 50;
+        const grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        const placed = [];
+
+        const first = list[0];
+        const startX = Math.floor(GRID_SIZE / 2) - Math.floor(first.word.length / 2);
+        const startY = Math.floor(GRID_SIZE / 2);
+        const firstDir = Math.random() > 0.5 ? 'across' : 'down';
+
+        if (firstDir === 'across') {
+          for (let i = 0; i < first.word.length; i++) {
+            grid[startY][startX + i] = { char: first.word[i], wordIndices: [0] };
+          }
+          placed.push({ ...first, x: startX, y: startY, dir: 'across', index: 0 });
+        } else {
+          for (let i = 0; i < first.word.length; i++) {
+            grid[startY + i][startX] = { char: first.word[i], wordIndices: [0] };
+          }
+          placed.push({ ...first, x: startX, y: startY, dir: 'down', index: 0 });
+        }
+
+        for (let w = 1; w < list.length; w++) {
+          const current = list[w];
+          const wordStr = current.word;
+          const candidates = [];
+
+          for (const p of placed) {
+            const targetDir = p.dir === 'across' ? 'down' : 'across';
+
+            for (let i = 0; i < wordStr.length; i++) {
+              const char = wordStr[i];
+
+              for (let j = 0; j < p.word.length; j++) {
+                if (p.word[j] === char) {
+                  let candX = targetDir === 'down' ? p.x + j : p.x - i;
+                  let candY = targetDir === 'down' ? p.y - i : p.y + j;
+
+                  if (canPlaceWord(grid, wordStr, candX, candY, targetDir)) {
+                    let score = 0;
+                    for (let c = 0; c < wordStr.length; c++) {
+                      const cx = targetDir === 'across' ? candX + c : candX;
+                      const cy = targetDir === 'across' ? candY : candY + c;
+                      if (grid[cy][cx] !== null) score += 20;
+                    }
+                    candidates.push({ x: candX, y: candY, dir: targetDir, score });
+                  }
+                }
+              }
+            }
+          }
+
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => b.score - a.score);
+            const best = candidates[0];
+
+            if (best.dir === 'across') {
+              for (let i = 0; i < wordStr.length; i++) {
+                if (!grid[best.y][best.x + i]) grid[best.y][best.x + i] = { char: wordStr[i], wordIndices: [w] };
+                else grid[best.y][best.x + i].wordIndices.push(w);
+              }
+            } else {
+              for (let i = 0; i < wordStr.length; i++) {
+                if (!grid[best.y + i][best.x]) grid[best.y + i][best.x] = { char: wordStr[i], wordIndices: [w] };
+                else grid[best.y + i][best.x].wordIndices.push(w);
+              }
+            }
+            placed.push({ ...current, x: best.x, y: best.y, dir: best.dir, index: w });
+          }
+        }
+
+        if (placed.length > 0) {
+          const bounds = getBounds(grid);
+          const totalArea = (bounds.maxX - bounds.minX + 1) * (bounds.maxY - bounds.minY + 1);
+          const placedRatio = placed.length / cleanList.length;
+          const fitness = (placed.length * 1000) - totalArea + (placedRatio * 5000);
+
+          if (!bestResult || fitness > bestResult.fitness) {
+            bestResult = { grid, placed, bounds, fitness, totalWords: cleanList.length };
+          }
+        }
+
+        if (bestResult && bestResult.placed.length === cleanList.length && attempt > 25) break;
+      }
+
+      if (!bestResult) return null;
+      return finalizeCrossword(bestResult, cleanList);
+    }
+
+    function canPlaceWord(grid, word, startX, startY, dir) {
+      const len = word.length;
+      const size = grid.length;
+      if (dir === 'across') {
+        if (startX < 1 || startX + len >= size - 1 || startY < 1 || startY >= size - 1) return false;
+        if (grid[startY][startX - 1] !== null || grid[startY][startX + len] !== null) return false;
+        let intersections = 0;
+        for (let i = 0; i < len; i++) {
+          const cell = grid[startY][startX + i];
+          if (cell !== null) {
+            if (cell.char !== word[i]) return false;
+            intersections++;
+          } else {
+            if (grid[startY - 1][startX + i] !== null || grid[startY + 1][startX + i] !== null) return false;
+          }
+        }
+        return intersections > 0;
+      } else {
+        if (startX < 1 || startX >= size - 1 || startY < 1 || startY + len >= size - 1) return false;
+        if (grid[startY - 1][startX] !== null || grid[startY + len][startX] !== null) return false;
+        let intersections = 0;
+        for (let i = 0; i < len; i++) {
+          const cell = grid[startY + i][startX];
+          if (cell !== null) {
+            if (cell.char !== word[i]) return false;
+            intersections++;
+          } else {
+            if (grid[startY + i][startX - 1] !== null || grid[startY + i][startX + 1] !== null) return false;
+          }
+        }
+        return intersections > 0;
+      }
+    }
+
+    function getBounds(grid) {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+          if (grid[y][x] !== null) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      return { minX, maxX, minY, maxY };
+    }
+
+    function finalizeCrossword(result, originalList) {
+      const { grid, placed, bounds } = result;
+      const width = bounds.maxX - bounds.minX + 1;
+      const height = bounds.maxY - bounds.minY + 1;
+      const cropped = Array(height).fill(null).map(() => Array(width).fill(null));
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const orig = grid[bounds.minY + y][bounds.minX + x];
+          if (orig) cropped[y][x] = { char: orig.char, number: null, acrossNumber: null, downNumber: null };
+        }
+      }
+
+      const adjPlaced = placed.map(p => ({ ...p, x: p.x - bounds.minX, y: p.y - bounds.minY }));
+      let currentNum = 1;
+      const acrossClues = [];
+      const downClues = [];
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const cell = cropped[y][x];
+          if (!cell) continue;
+          const aw = adjPlaced.find(p => p.dir === 'across' && p.x === x && p.y === y);
+          const dw = adjPlaced.find(p => p.dir === 'down' && p.x === x && p.y === y);
+          let numbered = false;
+          if (aw) {
+            cell.number = currentNum;
+            aw.number = currentNum;
+            acrossClues.push({ number: currentNum, word: aw.word, clue: aw.clue, x: aw.x, y: aw.y, dir: 'across', length: aw.word.length });
+            numbered = true;
+          }
+          if (dw) {
+            if (!numbered) cell.number = currentNum;
+            dw.number = currentNum;
+            downClues.push({ number: currentNum, word: dw.word, clue: dw.clue, x: dw.x, y: dw.y, dir: 'down', length: dw.word.length });
+            numbered = true;
+          }
+          if (numbered) currentNum++;
+        }
+      }
+
+      for (const c of acrossClues) {
+        for (let i = 0; i < c.length; i++) if (cropped[c.y][c.x + i]) cropped[c.y][c.x + i].acrossNumber = c.number;
+      }
+      for (const c of downClues) {
+        for (let i = 0; i < c.length; i++) if (cropped[c.y + i][c.x]) cropped[c.y + i][c.x].downNumber = c.number;
+      }
+
+      const unplaced = originalList.filter(item => !placed.some(p => p.word === item.word));
+      return { grid: cropped, width, height, placedWords: adjPlaced, acrossClues, downClues, unplaced };
+    }
+
+    function switchTab(tabId) {
+      ['play', 'edit', 'print', 'sheets'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const tab = document.getElementById(`tab-${v}`);
+        if (v === tabId) {
+          el?.classList.remove('hidden');
+          el?.classList.add('flex');
+          if (tab) {
+            tab.className = "px-3 py-1 rounded-full bg-white text-stone-900 shadow-2xs transition";
+          }
+        } else {
+          el?.classList.add('hidden');
+          el?.classList.remove('flex');
+          if (tab) {
+            tab.className = "px-3 py-1 rounded-full text-stone-600 hover:text-stone-900 transition";
+          }
+        }
+      });
+      if (tabId === 'print') renderPrintView();
+    }
+
+    function showToast(msg, icon = '✨') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast-icon').textContent = icon;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      setTimeout(() => toast.classList.add('opacity-0', '-translate-y-2'), 2200);
+    }
+
+    function loadPreset(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+      document.getElementById('input-title').value = p.title;
+      document.getElementById('input-subtitle').value = p.subtitle;
+      document.getElementById('input-words').value = p.words.map(w => `${w.word}: ${w.clue}`).join('\n');
+      handleGenerateClick();
+      showToast(`Loaded "${p.title}"`, '🌍');
+    }
+
+    function handleGenerateClick(isReroll = false) {
+      const title = document.getElementById('input-title').value.trim() || 'Crossword';
+      const subtitle = document.getElementById('input-subtitle').value.trim();
+      const rawText = document.getElementById('input-words').value.trim();
+
+      const lines = rawText.split('\n').filter(l => l.trim().length > 0);
+      const wordList = lines.map(line => {
+        let parts = line.split(':');
+        if (parts.length === 1) parts = line.split('-');
+        const word = parts[0].trim().toUpperCase();
+        const clue = parts.length > 1 ? parts.slice(1).join(':').trim() : word;
+        return { word, clue };
+      }).filter(item => item.word.length >= 2);
+
+      if (wordList.length < 2) {
+        showToast('Please enter at least 2 words', '⚠️');
+        return;
+      }
+
+      const puzzleData = generateCrossword(wordList, { maxAttempts: 90 });
+      if (!puzzleData) {
+        showToast('Could not fit words. Try more shared letters.', '❌');
+        return;
+      }
+
+      puzzleData.title = title;
+      puzzleData.subtitle = subtitle;
+      currentPuzzle = puzzleData;
+      hasWon = false;
+      solvedWordsSet.clear();
+
+      playerGridState = Array(puzzleData.height).fill(null).map(() => Array(puzzleData.width).fill(''));
+
+      let firstX = 0, firstY = 0;
+      for (let y = 0; y < puzzleData.height; y++) {
+        let found = false;
+        for (let x = 0; x < puzzleData.width; x++) {
+          if (puzzleData.grid[y][x]) {
+            firstX = x; firstY = y; found = true; break;
+          }
+        }
+        if (found) break;
+      }
+      selectedCell = { x: firstX, y: firstY };
+      currentDirection = puzzleData.grid[firstY][firstX].acrossNumber ? 'across' : 'down';
+
+      renderEditorPreview();
+      renderPlayView();
+      renderPrintView();
+
+      showToast(isReroll ? 'New layout generated' : 'Puzzle built!', '🌍');
+    }
+
+    function renderEditorPreview() {
+      if (!currentPuzzle) return;
+      const { grid, width, height, placedWords } = currentPuzzle;
+      document.getElementById('gen-stats-badge').textContent = `${width}×${height} • ${placedWords.length} words`;
+
+      let html = `<div class="grid gap-1.5 p-2 bg-[#F8F6F0] rounded-xl border border-[#E5E0CF]" style="grid-template-columns: repeat(${width}, minmax(18px, 24px));">`;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const cell = grid[y][x];
+          if (cell) {
+            html += `
+              <div class="aspect-square bg-white border border-[#D5CEBA] rounded-md flex items-center justify-center font-bold text-[10px] text-stone-900 relative shadow-2xs">
+                ${cell.number ? `<span class="absolute top-0.5 left-0.5 text-[6px] text-stone-400 leading-none">${cell.number}</span>` : ''}
+                ${cell.char}
+              </div>
+            `;
+          } else {
+            html += `<div class="aspect-square bg-transparent"></div>`;
+          }
+        }
+      }
+      html += `</div>`;
+      document.getElementById('editor-preview-container').innerHTML = html;
+    }
+
+    // Render Play View (Knotwords / Apple Award Style)
+    function renderPlayView() {
+      if (!currentPuzzle) return;
+      const { grid, width, height, title, subtitle, acrossClues, downClues } = currentPuzzle;
+
+      document.getElementById('play-title').textContent = title;
+      document.getElementById('play-subtitle').textContent = subtitle || 'Explore global words, greetings, and communication';
+
+      const maxDim = Math.max(width, height);
+      let cellSize = "w-9 h-9 sm:w-11 sm:h-11 text-base sm:text-lg";
+      if (maxDim > 11) cellSize = "w-8 h-8 sm:w-9 sm:h-9 text-sm sm:text-base";
+      if (maxDim > 14) cellSize = "w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm";
+      if (maxDim > 18) cellSize = "w-6 h-6 sm:w-7 sm:h-7 text-[11px] sm:text-xs";
+
+      let html = `<div class="grid gap-1.5 bg-transparent" style="grid-template-columns: repeat(${width}, auto);">`;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const cell = grid[y][x];
+          if (cell) {
+            const userVal = playerGridState[y][x] || '';
+            html += `
+              <div id="cell-${x}-${y}" onclick="handleCellClick(${x}, ${y})" class="crossword-tile ${cellSize} cursor-pointer">
+                ${cell.number ? `<span class="tile-number absolute top-0.5 left-1 text-[8px] sm:text-[9px] font-bold text-stone-400 leading-none pointer-events-none">${cell.number}</span>` : ''}
+                <input id="input-${x}-${y}" type="text" maxlength="1" value="${userVal}" readonly class="w-full h-full text-center bg-transparent cursor-pointer select-none">
+              </div>
+            `;
+          } else {
+            html += `<div class="${cellSize} bg-transparent pointer-events-none"></div>`;
+          }
+        }
+      }
+      html += `</div>`;
+      document.getElementById('grid-container').innerHTML = html;
+
+      renderClueList('play-across-clues', acrossClues, 'across');
+      renderClueList('play-down-clues', downClues, 'down');
+
+      evaluateWordsProgress(false);
+      updateHighlights();
+    }
+
+    function renderClueList(elId, clues, dir) {
+      document.getElementById(elId).innerHTML = clues.map(c => `
+        <li id="clue-${dir}-${c.number}" onclick="selectClue('${dir}', ${c.number})" class="clue-item py-1 px-1.5 cursor-pointer hover:bg-white transition flex items-start gap-1.5 unselectable">
+          <span class="font-bold text-stone-900 w-4 text-right shrink-0">${c.number}</span>
+          <span class="clue-body text-stone-700 leading-snug font-normal unselectable">${c.clue}</span>
+        </li>
+      `).join('');
+    }
+
+    function handleCellClick(x, y) {
+      if (selectedCell.x === x && selectedCell.y === y) {
+        toggleDirection();
+      } else {
+        selectedCell = { x, y };
+        const cell = currentPuzzle.grid[y][x];
+        if (currentDirection === 'across' && !cell.acrossNumber && cell.downNumber) currentDirection = 'down';
+        else if (currentDirection === 'down' && !cell.downNumber && cell.acrossNumber) currentDirection = 'across';
+        updateDirectionUI();
+      }
+      updateHighlights();
+      playMarimba('key');
+    }
+
+    function toggleDirection() {
+      const cell = currentPuzzle.grid[selectedCell.y][selectedCell.x];
+      if (currentDirection === 'across' && cell.downNumber) currentDirection = 'down';
+      else if (currentDirection === 'down' && cell.acrossNumber) currentDirection = 'across';
+      updateDirectionUI();
+      updateHighlights();
+    }
+
+    function updateDirectionUI() {
+      document.getElementById('dir-label').textContent = currentDirection === 'across' ? 'ACROSS ➡️' : 'DOWN ⬇️';
+    }
+
+    function selectClue(dir, num) {
+      currentDirection = dir;
+      updateDirectionUI();
+      const list = dir === 'across' ? currentPuzzle.acrossClues : currentPuzzle.downClues;
+      const clue = list.find(c => c.number === num);
+      if (clue) {
+        selectedCell = { x: clue.x, y: clue.y };
+        updateHighlights();
+      }
+      playMarimba('key');
+    }
+
+    function jumpNextClue() {
+      const list = currentDirection === 'across' ? currentPuzzle.acrossClues : currentPuzzle.downClues;
+      const cell = currentPuzzle.grid[selectedCell.y][selectedCell.x];
+      const activeNum = currentDirection === 'across' ? cell.acrossNumber : cell.downNumber;
+      let idx = list.findIndex(c => c.number === activeNum);
+      let nextIdx = (idx + 1) % list.length;
+      selectClue(currentDirection, list[nextIdx].number);
+    }
+
+    function jumpPrevClue() {
+      const list = currentDirection === 'across' ? currentPuzzle.acrossClues : currentPuzzle.downClues;
+      const cell = currentPuzzle.grid[selectedCell.y][selectedCell.x];
+      const activeNum = currentDirection === 'across' ? cell.acrossNumber : cell.downNumber;
+      let idx = list.findIndex(c => c.number === activeNum);
+      let prevIdx = (idx - 1 + list.length) % list.length;
+      selectClue(currentDirection, list[prevIdx].number);
+    }
+
+    function updateHighlights() {
+      if (!currentPuzzle) return;
+      const { grid, width, height, acrossClues, downClues } = currentPuzzle;
+      const { x, y } = selectedCell;
+
+      for (let r = 0; r < height; r++) {
+        for (let c = 0; c < width; c++) {
+          const el = document.getElementById(`cell-${c}-${r}`);
+          if (el) el.classList.remove('active-cell', 'active-word');
+        }
+      }
+
+      document.querySelectorAll('.clue-item').forEach(el => el.classList.remove('active-clue'));
+
+      const cell = grid[y]?.[x];
+      if (!cell) return;
+
+      const activeNum = currentDirection === 'across' ? cell.acrossNumber : cell.downNumber;
+
+      if (activeNum) {
+        const list = currentDirection === 'across' ? acrossClues : downClues;
+        const clue = list.find(c => c.number === activeNum);
+        if (clue) {
+          for (let i = 0; i < clue.length; i++) {
+            const wx = currentDirection === 'across' ? clue.x + i : clue.x;
+            const wy = currentDirection === 'across' ? clue.y : clue.y + i;
+            document.getElementById(`cell-${wx}-${wy}`)?.classList.add('active-word');
+          }
+
+          const clueEl = document.getElementById(`clue-${currentDirection}-${activeNum}`);
+          if (clueEl) clueEl.classList.add('active-clue');
+
+          document.getElementById('active-clue-badge').textContent = `${clue.number}${currentDirection === 'across' ? 'A' : 'D'}`;
+          document.getElementById('active-clue-text').textContent = clue.clue;
+        }
+      }
+
+      document.getElementById(`cell-${x}-${y}`)?.classList.add('active-cell');
+    }
+
+    // Touch Keyboard & Hardware Keyboard Input
+    function handleVirtualKey(key) {
+      if (key === 'BACKSPACE') {
+        handleBackspace();
+      } else if (/^[A-Z]$/.test(key)) {
+        handleLetter(key);
+      }
+    }
+
+    function handleLetter(letter) {
+      if (!currentPuzzle) return;
+      const { x, y } = selectedCell;
+      playerGridState[y][x] = letter;
+      updateCellInput(x, y, letter);
+      document.getElementById(`cell-${x}-${y}`)?.classList.remove('incorrect-cell');
+
+      playMarimba('key');
+      evaluateWordsProgress(true);
+      stepCell(1);
+      updateHighlights();
+    }
+
+    function handleBackspace() {
+      if (!currentPuzzle) return;
+      const { x, y } = selectedCell;
+      if (playerGridState[y][x] !== '') {
+        playerGridState[y][x] = '';
+        updateCellInput(x, y, '');
+      } else {
+        stepCell(-1);
+        playerGridState[selectedCell.y][selectedCell.x] = '';
+        updateCellInput(selectedCell.x, selectedCell.y, '');
+      }
+      document.getElementById(`cell-${x}-${y}`)?.classList.remove('incorrect-cell');
+      evaluateWordsProgress(true);
+      updateHighlights();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('pin-modal').classList.contains('hidden')) return;
+      if (!document.getElementById('proctor-setup-modal').classList.contains('hidden')) return;
+      if (document.getElementById('view-play').classList.contains('hidden')) return;
+      if (e.target.tagName === 'INPUT' && e.target.id && !e.target.id.startsWith('input-')) return;
+      if (e.target.tagName === 'TEXTAREA') return;
+      if (!currentPuzzle) return;
+
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        toggleDirection();
+        return;
+      }
+      if (e.key === 'ArrowRight') { e.preventDefault(); moveSelection(1, 0); return; }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); moveSelection(-1, 0); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); moveSelection(0, 1); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); moveSelection(0, -1); return; }
+
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        handleBackspace();
+        return;
+      }
+
+      if (/^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        handleLetter(e.key.toUpperCase());
+      }
+    });
+
+    function updateCellInput(x, y, val) {
+      const input = document.getElementById(`input-${x}-${y}`);
+      if (input) input.value = val;
+    }
+
+    function moveSelection(dx, dy) {
+      const { width, height, grid } = currentPuzzle;
+      let nx = (selectedCell.x + dx + width) % width;
+      let ny = (selectedCell.y + dy + height) % height;
+      let count = 0;
+      while (!grid[ny][nx] && count < 50) {
+        nx = (nx + dx + width) % width;
+        ny = (ny + dy + height) % height;
+        count++;
+      }
+      if (grid[ny][nx]) {
+        selectedCell = { x: nx, y: ny };
+        updateHighlights();
+      }
+    }
+
+    function stepCell(delta) {
+      const { grid, width, height } = currentPuzzle;
+      let nx = selectedCell.x + (currentDirection === 'across' ? delta : 0);
+      let ny = selectedCell.y + (currentDirection === 'down' ? delta : 0);
+      if (nx >= 0 && nx < width && ny >= 0 && ny < height && grid[ny][nx]) {
+        selectedCell = { x: nx, y: ny };
+      }
+    }
+
+    // Word completion verification
+    function evaluateWordsProgress(triggerSound = true) {
+      if (!currentPuzzle) return;
+      const { acrossClues, downClues, grid, width, height } = currentPuzzle;
+      const totalWords = acrossClues.length + downClues.length;
+      let solvedCount = 0;
+      let newlySolved = null;
+
+      let acrossSolved = 0;
+      acrossClues.forEach(clue => {
+        const key = `across-${clue.number}`;
+        let complete = true;
+        for (let i = 0; i < clue.length; i++) {
+          if (playerGridState[clue.y][clue.x + i] !== clue.word[i]) {
+            complete = false; break;
+          }
+        }
+        if (complete) {
+          solvedCount++;
+          acrossSolved++;
+          if (!solvedWordsSet.has(key)) {
+            solvedWordsSet.add(key);
+            newlySolved = clue;
+          }
+          document.getElementById(`clue-across-${clue.number}`)?.classList.add('solved');
+        } else {
+          solvedWordsSet.delete(key);
+          document.getElementById(`clue-across-${clue.number}`)?.classList.remove('solved');
+        }
+      });
+
+      let downSolved = 0;
+      downClues.forEach(clue => {
+        const key = `down-${clue.number}`;
+        let complete = true;
+        for (let i = 0; i < clue.length; i++) {
+          if (playerGridState[clue.y + i][clue.x] !== clue.word[i]) {
+            complete = false; break;
+          }
+        }
+        if (complete) {
+          solvedCount++;
+          downSolved++;
+          if (!solvedWordsSet.has(key)) {
+            solvedWordsSet.add(key);
+            newlySolved = clue;
+          }
+          document.getElementById(`clue-down-${clue.number}`)?.classList.add('solved');
+        } else {
+          solvedWordsSet.delete(key);
+          document.getElementById(`clue-down-${clue.number}`)?.classList.remove('solved');
+        }
+      });
+
+      // Update grid cells styling
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const cell = grid[y][x];
+          const el = document.getElementById(`cell-${x}-${y}`);
+          if (cell && el) {
+            const isAcrossSolved = cell.acrossNumber && solvedWordsSet.has(`across-${cell.acrossNumber}`);
+            const isDownSolved = cell.downNumber && solvedWordsSet.has(`down-${cell.downNumber}`);
+            if (isAcrossSolved || isDownSolved) {
+              el.classList.add('word-solved');
+            } else {
+              el.classList.remove('word-solved');
+            }
+          }
+        }
+      }
+
+      document.getElementById('play-counter-badge').textContent = `${solvedCount} / ${totalWords} Solved`;
+      document.getElementById('across-solved-count').textContent = `${acrossSolved}/${acrossClues.length}`;
+      document.getElementById('down-solved-count').textContent = `${downSolved}/${downClues.length}`;
+
+      const dot = document.getElementById('progress-dot');
+      if (solvedCount === totalWords && totalWords > 0) {
+        dot.className = "w-2 h-2 rounded-full bg-[#4E8B56]";
+      } else if (solvedCount > 0) {
+        dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-stone-300";
+      }
+
+      if (newlySolved && triggerSound) {
+        playMarimba('word');
+        showToast(`Solved "${newlySolved.word}"!`, '🌍');
+      }
+
+      if (solvedCount === totalWords && totalWords > 0 && !hasWon) {
+        hasWon = true;
+        setTimeout(() => triggerVictory(), 350);
+      }
+    }
+
+    function checkAnswers() {
+      if (!currentPuzzle) return;
+      const { grid, width, height } = currentPuzzle;
+      let allCorrect = true, totalFilled = 0, totalCells = 0;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (grid[y][x]) {
+            totalCells++;
+            const el = document.getElementById(`cell-${x}-${y}`);
+            const expected = grid[y][x].char;
+            const entered = playerGridState[y][x];
+            el?.classList.remove('incorrect-cell');
+
+            if (entered) {
+              totalFilled++;
+              if (entered !== expected) {
+                el?.classList.add('incorrect-cell');
+                allCorrect = false;
+              }
+            } else {
+              allCorrect = false;
+            }
+          }
+        }
+      }
+
+      evaluateWordsProgress(true);
+      if (allCorrect && totalFilled === totalCells) triggerVictory();
+      else if (totalFilled === 0) showToast('Fill in letters first', '✏️');
+      else if (allCorrect) showToast('All entered letters correct!', '✨');
+      else showToast('Some letters need adjustment', '🧐');
+    }
+
+    function revealLetter() {
+      if (!currentPuzzle) return;
+      const { x, y } = selectedCell;
+      const cell = currentPuzzle.grid[y]?.[x];
+      if (cell) {
+        playerGridState[y][x] = cell.char;
+        updateCellInput(x, y, cell.char);
+        document.getElementById(`cell-${x}-${y}`)?.classList.remove('incorrect-cell');
+        showToast(`Revealed: ${cell.char}`, '💡');
+        evaluateWordsProgress(true);
+        stepCell(1);
+        updateHighlights();
+      }
+    }
+
+    function resetPuzzleInputs() {
+      if (!currentPuzzle) return;
+      if (confirm('Clear the grid?')) {
+        const { width, height } = currentPuzzle;
+        playerGridState = Array(height).fill(null).map(() => Array(width).fill(''));
+        solvedWordsSet.clear();
+        hasWon = false;
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            updateCellInput(x, y, '');
+            document.getElementById(`cell-${x}-${y}`)?.classList.remove('incorrect-cell', 'word-solved');
+          }
+        }
+        evaluateWordsProgress(false);
+        updateHighlights();
+      }
+    }
+
+    function triggerVictory() {
+      playMarimba('victory');
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      }
+
+      if (isTestMode) {
+        stopTestMode(true);
+      } else {
+        document.getElementById('victory-modal').classList.remove('hidden');
+      }
+    }
+
+    function closeVictoryModal() {
+      document.getElementById('victory-modal').classList.add('hidden');
+    }
+
+    function renderPrintView() {
+      if (!currentPuzzle) return;
+      const { grid, width, height, title, subtitle, acrossClues, downClues } = currentPuzzle;
+      const isKey = isTeacherUnlocked && document.getElementById('print-answer-key-toggle').checked;
+
+      document.getElementById('print-title').textContent = title;
+      document.getElementById('print-subtitle').textContent = subtitle || '';
+      document.getElementById('print-answer-key-badge').classList.toggle('hidden', !isKey);
+
+      let html = `<div class="grid gap-0 bg-transparent border border-black" style="grid-template-columns: repeat(${width}, 26px);">`;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const cell = grid[y][x];
+          if (cell) {
+            html += `
+              <div class="w-[26px] h-[26px] bg-white border border-black flex items-center justify-center relative font-bold text-xs">
+                ${cell.number ? `<span class="absolute top-0.5 left-0.5 text-[7px] leading-none">${cell.number}</span>` : ''}
+                ${isKey ? `<span>${cell.char}</span>` : ''}
+              </div>
+            `;
+          } else {
+            html += `<div class="w-[26px] h-[26px] bg-transparent"></div>`;
+          }
+        }
+      }
+      html += `</div>`;
+      document.getElementById('print-grid-container').innerHTML = html;
+
+      document.getElementById('print-across-clues').innerHTML = acrossClues.map(c => `
+        <li><strong>${c.number}.</strong> ${c.clue}</li>
+      `).join('');
+      document.getElementById('print-down-clues').innerHTML = downClues.map(c => `
+        <li><strong>${c.number}.</strong> ${c.clue}</li>
+      `).join('');
+    }
+
+    function sharePuzzle() {
+      if (!currentPuzzle) return;
+      const data = { t: currentPuzzle.title, s: currentPuzzle.subtitle, w: currentPuzzle.placedWords.map(p => `${p.word}:${p.clue}`) };
+      const hash = encodeURIComponent(JSON.stringify(data));
+      const testUrl = `${window.location.origin}${window.location.pathname}#test&puzzle=${hash}`;
+      navigator.clipboard.writeText(testUrl).then(() => showToast('Class Test Link Copied!', '📋')).catch(() => showToast('Link ready', '🔗'));
+    }
+
+    function checkUrlHash() {
+      try {
+        const hash = window.location.hash;
+        const isAutoTest = hash.includes('#test') || hash.includes('&test');
+
+        if (hash.includes('puzzle=')) {
+          const puzzlePart = hash.split('puzzle=')[1];
+          const raw = decodeURIComponent(puzzlePart);
+          const data = JSON.parse(raw);
+          if (data && data.w) {
+            document.getElementById('input-title').value = data.t || 'Crossword';
+            document.getElementById('input-subtitle').value = data.s || '';
+            document.getElementById('input-words').value = data.w.join('\n');
+            handleGenerateClick();
+            switchTab('play');
+            if (isAutoTest) setTimeout(handleProctorToggle, 300);
+            return true;
+          }
+        } else if (isAutoTest) {
+          setTimeout(handleProctorToggle, 300);
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    const GAS_CODE = `function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('🧩 Crossword')
+    .addItem('Generate from "Words" Sheet', 'generateCrosswordInSheet')
+    .addToUi();
+}`;
+
+    function copyGasCode() {
+      navigator.clipboard.writeText(GAS_CODE).then(() => showToast('Code copied!', '📋'));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('gas-code-block').textContent = GAS_CODE;
+      updateTeacherLockUI();
+      if (!checkUrlHash()) loadPreset('languages');
+    });
+  </script>
+</body>
+</html>
