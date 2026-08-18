@@ -328,9 +328,9 @@
           <button onclick="checkAnswers()" class="px-3 py-1 rounded-full bg-[#4E8B56] hover:bg-[#3E7345] active:scale-95 text-white font-bold text-xs shadow-[0_2px_0_0_#2E5834] transition">
             Check
           </button>
-          <button id="hint-action-btn" onclick="handleHintClick()" class="px-2.5 py-1 rounded-full bg-white hover:bg-stone-50 border border-[#E2DEC9] text-stone-700 font-bold text-xs shadow-[0_2px_0_0_#D5CEBA] transition flex items-center gap-1">
-            <span>Hint</span>
-            <span id="hint-lock-icon" class="text-[9px] text-stone-400">🔒</span>
+          <button id="hint-action-btn" onclick="handleHintClick()" class="px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-xs shadow-[0_1.5px_0_0_#D5CEBA] transition flex items-center gap-1 active:scale-95" title="Reveal Letter (+15s penalty)">
+            <span>💡 Hint</span>
+            <span class="text-[10px] text-amber-700 font-semibold bg-amber-200/70 px-1 py-0.2 rounded">+15s</span>
           </button>
           <button id="reveal-answers-btn" onclick="handleToggleAnswersClick()" class="px-2.5 py-1 rounded-full bg-white hover:bg-stone-50 border border-[#E2DEC9] text-stone-700 font-bold text-xs shadow-[0_2px_0_0_#D5CEBA] transition flex items-center gap-1" title="Teacher Answers Toggle">
             <span>Answers</span>
@@ -754,6 +754,8 @@
     let testTimerInterval = null;
     let tabSwitchCount = 0;
     let puzzleStartTime = Date.now();
+    let hintCount = 0;
+    let hintPenaltySeconds = 0;
 
     function checkTeacherAccess(actionCallback, description = "Enter PIN to unlock this feature") {
       if (isTeacherUnlocked) {
@@ -906,6 +908,8 @@
 
       isTestMode = true;
       tabSwitchCount = 0;
+      hintCount = 0;
+      hintPenaltySeconds = 0;
       testStartTime = Date.now();
       document.body.classList.add('test-mode-active');
 
@@ -930,9 +934,8 @@
       document.getElementById('proctor-btn-text').textContent = 'Active';
       document.getElementById('proctor-btn').className = "h-7 px-2.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900 border border-amber-300 transition flex items-center gap-1 shadow-2xs";
       
-      // Disable tabs & hint during challenge
+      // Disable tabs during challenge (hints remain available with +15s penalty)
       document.getElementById('nav-tabs-container').classList.add('opacity-40', 'pointer-events-none');
-      document.getElementById('hint-action-btn').classList.add('opacity-40', 'pointer-events-none');
       document.getElementById('footer-status-msg').textContent = '⏱️ Timed Challenge Mode Active';
 
       // Start timer
@@ -945,10 +948,10 @@
 
     function updateLiveTestTimer() {
       if (!testStartTime) return;
-      const elapsedSec = Math.floor((Date.now() - testStartTime) / 1000);
+      const elapsedSec = Math.floor((Date.now() - testStartTime) / 1000) + hintPenaltySeconds;
       const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
       const secs = String(elapsedSec % 60).padStart(2, '0');
-      document.getElementById('test-live-timer').textContent = `${mins}:${secs}`;
+      document.getElementById('test-live-timer').textContent = `${mins}:${secs}${hintPenaltySeconds > 0 ? ` (+${hintPenaltySeconds}s)` : ''}`;
     }
 
     function exitTestModeRequest() {
@@ -968,7 +971,6 @@
       document.getElementById('proctor-btn').className = "h-7 px-2.5 rounded-full text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1 shadow-2xs";
 
       document.getElementById('nav-tabs-container').classList.remove('opacity-40', 'pointer-events-none');
-      document.getElementById('hint-action-btn').classList.remove('opacity-40', 'pointer-events-none');
       document.getElementById('footer-status-msg').textContent = '✨ Crossword Studio';
 
       if (document.fullscreenElement && document.exitFullscreen) {
@@ -985,16 +987,17 @@
     function showOfficialScorecard() {
       try {
         const startTime = testStartTime || puzzleStartTime || Date.now();
-        const elapsedSec = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
-        const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-        const secs = String(elapsedSec % 60).padStart(2, '0');
+        const rawSec = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+        const totalSec = rawSec + hintPenaltySeconds;
+        const mins = String(Math.floor(totalSec / 60)).padStart(2, '0');
+        const secs = String(totalSec % 60).padStart(2, '0');
         
         const displayName = testStudentName || 'Student';
         const nameEl = document.getElementById('cert-student-name');
         if (nameEl) nameEl.textContent = displayName;
         
         const timeEl = document.getElementById('cert-time-taken');
-        if (timeEl) timeEl.textContent = `${mins}:${secs}`;
+        if (timeEl) timeEl.textContent = `${mins}:${secs}${hintPenaltySeconds > 0 ? ` (+${hintPenaltySeconds}s)` : ''}`;
         
         const tsEl = document.getElementById('cert-timestamp');
         if (tsEl) tsEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1005,11 +1008,14 @@
 
         const badge = document.getElementById('cert-integrity-badge');
         if (badge) {
-          if (tabSwitchCount === 0) {
-            badge.textContent = `100% Focus`;
+          if (hintCount === 0 && tabSwitchCount === 0) {
+            badge.textContent = `🌟 100% Focus`;
             badge.className = "font-bold text-[10px] sm:text-[11px] text-emerald-800 leading-tight block truncate";
+          } else if (hintCount > 0 && tabSwitchCount === 0) {
+            badge.textContent = `💡 ${hintCount} hint${hintCount > 1 ? 's' : ''} (+${hintPenaltySeconds}s)`;
+            badge.className = "font-bold text-[10px] sm:text-[11px] text-amber-800 leading-tight block truncate";
           } else {
-            badge.textContent = `${tabSwitchCount} tab switch${tabSwitchCount > 1 ? 'es' : ''}`;
+            badge.textContent = `${tabSwitchCount} tab switch${tabSwitchCount > 1 ? 'es' : ''}${hintCount > 0 ? ` • ${hintCount} hint` : ''}`;
             badge.className = "font-bold text-[10px] sm:text-[11px] text-amber-800 leading-tight block truncate";
           }
         }
@@ -1130,13 +1136,7 @@
     }
 
     function handleHintClick() {
-      if (isTestMode) {
-        showToast('Hints are disabled during test mode', '🔒');
-        return;
-      }
-      checkTeacherAccess(() => {
-        revealLetter();
-      }, "Enter PIN to reveal a hint for this square");
+      revealLetter();
     }
 
     let isAnswerKeyRevealed = false;
@@ -2071,15 +2071,27 @@
       if (!currentPuzzle) return;
       const { x, y } = selectedCell;
       const cell = currentPuzzle.grid[y]?.[x];
-      if (cell) {
-        playerGridState[y][x] = cell.char;
-        updateCellInput(x, y, cell.char);
-        document.getElementById(`cell-${x}-${y}`)?.classList.remove('incorrect-cell');
-        showToast(`Revealed: ${cell.char}`, '💡');
-        evaluateWordsProgress(true);
-        stepCell(1);
-        updateHighlights();
+      if (!cell) return;
+
+      // Check if square is already correct
+      if (playerGridState[y][x] === cell.char) {
+        showToast('Square already solved!', '✨');
+        return;
       }
+
+      hintCount++;
+      hintPenaltySeconds += 15;
+
+      playerGridState[y][x] = cell.char;
+      updateCellInput(x, y, cell.char);
+      document.getElementById(`cell-${x}-${y}`)?.classList.remove('incorrect-cell');
+      
+      playMarimba('word');
+      showToast(`💡 Hint: "${cell.char}" (+15s penalty)`, '⏱️');
+      
+      evaluateWordsProgress(true);
+      stepCell(1);
+      updateHighlights();
     }
 
     function resetPuzzleInputs() {
@@ -2089,6 +2101,8 @@
         playerGridState = Array(height).fill(null).map(() => Array(width).fill(''));
         solvedWordsSet.clear();
         hasWon = false;
+        hintCount = 0;
+        hintPenaltySeconds = 0;
         for (let y = 0; y < height; y++) {
           for (let x = 0; x < width; x++) {
             updateCellInput(x, y, '');
