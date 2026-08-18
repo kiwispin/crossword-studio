@@ -169,13 +169,21 @@
       text-decoration: line-through;
     }
 
-    /* Custom thin scrollbar */
-    .custom-scroll::-webkit-scrollbar {
-      width: 4px;
+    /* Complete universal scrollbar elimination on all platforms */
+    *, *::before, *::after {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
     }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #D5CEBA;
-      border-radius: 4px;
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0px !important;
+      height: 0px !important;
+    }
+    html, body {
+      overflow: hidden !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      width: 100vw !important;
     }
 
     /* PIN input boxes */
@@ -679,20 +687,6 @@
     </div>
   </div>
 
-  <!-- Standard Victory Modal (Normal Mode) -->
-  <div id="victory-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/35 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-3xl p-7 max-w-xs w-full text-center shadow-2xl border border-[#E5E0CF]">
-      <div class="w-14 h-14 bg-[#4E8B56] text-white rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-[0_3px_0_0_#2E5834]">
-        🌍
-      </div>
-      <h2 class="font-bold text-xl text-stone-900 mb-1 tracking-tight">Félicitations!</h2>
-      <p class="text-stone-500 font-serif italic text-xs mb-5">You solved all the International Language Week clues!</p>
-      <button onclick="closeVictoryModal()" class="w-full bg-[#4E8B56] hover:bg-[#3E7345] text-white font-bold text-xs py-3 rounded-xl shadow-[0_2px_0_0_#2E5834] transition">
-        Play Again
-      </button>
-    </div>
-  </div>
-
   <!-- Teacher PIN Modal -->
   <div id="pin-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/30 backdrop-blur-sm hidden">
     <div id="pin-modal-card" class="bg-white rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl border border-[#E5E0CF] relative">
@@ -748,6 +742,7 @@
     let testStartTime = null;
     let testTimerInterval = null;
     let tabSwitchCount = 0;
+    let puzzleStartTime = Date.now();
 
     function checkTeacherAccess(actionCallback, description = "Enter PIN to unlock this feature") {
       if (isTeacherUnlocked) {
@@ -977,16 +972,18 @@
     }
 
     function showOfficialScorecard() {
-      const elapsedSec = Math.floor((Date.now() - testStartTime) / 1000);
+      const startTime = testStartTime || puzzleStartTime || Date.now();
+      const elapsedSec = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
       const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
       const secs = String(elapsedSec % 60).padStart(2, '0');
       
-      document.getElementById('cert-student-name').textContent = testStudentName;
+      const displayName = testStudentName || 'Student';
+      document.getElementById('cert-student-name').textContent = displayName;
       document.getElementById('cert-time-taken').textContent = `${mins}:${secs}`;
       document.getElementById('cert-timestamp').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       const totalWords = currentPuzzle ? (currentPuzzle.acrossClues.length + currentPuzzle.downClues.length) : 0;
-      document.getElementById('cert-accuracy').textContent = `${totalWords} / ${totalWords} (100% Solved)`;
+      document.getElementById('cert-accuracy').textContent = `${totalWords} / ${totalWords}`;
 
       const badge = document.getElementById('cert-integrity-badge');
       if (tabSwitchCount === 0) {
@@ -998,7 +995,7 @@
       }
 
       const randomAuth = Math.floor(1000 + Math.random() * 9000);
-      document.getElementById('cert-hash-code').textContent = `AUTH: ILW-${testStudentName.toUpperCase().slice(0,3)}-${randomAuth}-OK`;
+      document.getElementById('cert-hash-code').textContent = `AUTH: ILW-${displayName.toUpperCase().slice(0,3)}-${randomAuth}-OK`;
       document.getElementById('test-scorecard-modal').classList.remove('hidden');
     }
 
@@ -1654,15 +1651,15 @@
     function renderPlayView() {
       if (!currentPuzzle) return;
       const { grid, width, height, title, subtitle, acrossClues, downClues } = currentPuzzle;
+      if (!puzzleStartTime) puzzleStartTime = Date.now();
 
       document.getElementById('play-title').textContent = title;
-      document.getElementById('play-subtitle').textContent = subtitle || 'Explore global words, greetings, and communication';
+      document.getElementById('play-subtitle').textContent = subtitle || 'Can you name all these languages from around the globe?';
 
       const maxDim = Math.max(width, height);
-      let cellSize = "w-9 h-9 sm:w-11 sm:h-11 text-base sm:text-lg";
-      if (maxDim > 11) cellSize = "w-8 h-8 sm:w-9 sm:h-9 text-sm sm:text-base";
-      if (maxDim > 14) cellSize = "w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm";
-      if (maxDim > 18) cellSize = "w-6 h-6 sm:w-7 sm:h-7 text-[11px] sm:text-xs";
+      let cellSize = "w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 text-xs sm:text-sm md:text-base";
+      if (maxDim > 10) cellSize = "w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 text-xs sm:text-sm";
+      if (maxDim > 14) cellSize = "w-6 h-6 sm:w-7 sm:h-7 md:w-7 md:h-7 text-[10px] sm:text-xs";
 
       let html = `<div class="grid gap-1.5 bg-transparent" style="grid-template-columns: repeat(${width}, auto);">`;
 
@@ -2060,18 +2057,14 @@
     function triggerVictory() {
       playMarimba('victory');
       if (typeof confetti === 'function') {
-        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+        confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
       }
 
       if (isTestMode) {
         stopTestMode(true);
       } else {
-        document.getElementById('victory-modal').classList.remove('hidden');
+        showOfficialScorecard();
       }
-    }
-
-    function closeVictoryModal() {
-      document.getElementById('victory-modal').classList.add('hidden');
     }
 
     function renderPrintView() {
