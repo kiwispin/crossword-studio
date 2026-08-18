@@ -41,16 +41,17 @@ function setupSampleWordsSheet() {
     .setFontSize(11);
 
   const sampleData = [
-    ['BONJOUR', 'French greeting meaning hello or good day'],
-    ['HOLA', 'Friendly Spanish word for hello'],
-    ['ALOHA', 'Hawaiian word for love, peace, and hello'],
-    ['POLYGLOT', 'A person who can speak many different languages'],
-    ['TRANSLATE', 'To change words from one language into another'],
-    ['DIALECT', 'A regional variety of a language with unique words'],
-    ['FLUENT', 'Able to speak or write a language smoothly and easily'],
-    ['BRAILLE', 'Writing system of raised dots read with fingers'],
-    ['ACCENT', 'Distinctive way words are pronounced by region'],
-    ['IDIOM', 'A phrase with a figurative meaning like "piece of cake"']
+    ['SPANISH', 'Language spoken in Spain and Mexico'],
+    ['FRENCH', 'Language spoken in France and Paris'],
+    ['JAPANESE', 'Language spoken in Tokyo and Japan'],
+    ['GERMAN', 'Language spoken in Germany and Berlin'],
+    ['ITALIAN', 'Language spoken in Italy and Rome'],
+    ['ENGLISH', 'Language spoken in the UK, USA, and New Zealand'],
+    ['CHINESE', 'Language spoken by over a billion people in China'],
+    ['MAORI', 'Indigenous official language of New Zealand (Te Reo)'],
+    ['KOREAN', 'Language spoken in Seoul and South Korea'],
+    ['LATIN', 'Ancient language that inspired French, Spanish, and Italian'],
+    ['ARABIC', 'Language written from right to left across North Africa and Middle East']
   ];
 
   sheet.getRange(2, 1, sampleData.length, 2).setValues(sampleData);
