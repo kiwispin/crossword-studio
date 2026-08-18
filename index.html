@@ -874,24 +874,21 @@
       const tabEditLock = document.getElementById('tab-edit-lock');
       const tabSheetsLock = document.getElementById('tab-sheets-lock');
       const answerKeyLock = document.getElementById('answer-key-lock');
-      const hintLockIcon = document.getElementById('hint-lock-icon');
       const answersLockIcon = document.getElementById('answers-lock-icon');
 
       if (isTeacherUnlocked) {
-        lockBtnIcon.textContent = '🔓';
-        lockBtnText.textContent = 'Unlocked';
-        tabEditLock.textContent = '🔓';
-        tabSheetsLock.textContent = '🔓';
-        answerKeyLock.textContent = '🔓';
-        hintLockIcon.textContent = '🔓';
+        if (lockBtnIcon) lockBtnIcon.textContent = '🔓';
+        if (lockBtnText) lockBtnText.textContent = 'Unlocked';
+        if (tabEditLock) tabEditLock.textContent = '🔓';
+        if (tabSheetsLock) tabSheetsLock.textContent = '🔓';
+        if (answerKeyLock) answerKeyLock.textContent = '🔓';
         if (answersLockIcon) answersLockIcon.textContent = '🔓';
       } else {
-        lockBtnIcon.textContent = '🔒';
-        lockBtnText.textContent = 'PIN';
-        tabEditLock.textContent = '🔒';
-        tabSheetsLock.textContent = '🔒';
-        answerKeyLock.textContent = '🔒';
-        hintLockIcon.textContent = '🔒';
+        if (lockBtnIcon) lockBtnIcon.textContent = '🔒';
+        if (lockBtnText) lockBtnText.textContent = 'PIN';
+        if (tabEditLock) tabEditLock.textContent = '🔒';
+        if (tabSheetsLock) tabSheetsLock.textContent = '🔒';
+        if (answerKeyLock) answerKeyLock.textContent = '🔒';
         if (answersLockIcon) answersLockIcon.textContent = '🔒';
       }
     }
