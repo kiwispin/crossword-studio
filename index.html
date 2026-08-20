@@ -262,6 +262,10 @@
         <button id="tab-play" onclick="handleTabClick('play')" class="px-3 py-1 rounded-full bg-white text-stone-900 shadow-2xs transition">
           Play
         </button>
+        <button onclick="openTopicsModal()" class="px-3 py-1 rounded-full text-stone-700 hover:text-stone-950 transition flex items-center gap-1 font-semibold" title="Browse Topic Library">
+          <span>📚</span>
+          <span>Topics</span>
+        </button>
         <button id="tab-edit" onclick="handleTabClick('edit')" class="px-3 py-1 rounded-full text-stone-600 hover:text-stone-900 transition flex items-center gap-1">
           <span>Edit</span>
           <span id="tab-edit-lock" class="text-[9px] text-stone-400">🔒</span>
@@ -340,7 +344,11 @@
           <h2 id="play-title" class="font-bold text-base sm:text-lg text-stone-900 tracking-tight">World Languages</h2>
           <span id="play-subtitle" class="font-serif italic text-stone-500 text-xs hidden sm:inline truncate">Can you name all these languages from around the globe?</span>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button onclick="openTopicsModal()" class="px-2.5 py-1 rounded-full bg-white hover:bg-stone-50 border border-[#E2DEC9] text-stone-800 font-bold text-xs shadow-[0_1.5px_0_0_#D5CEBA] transition flex items-center gap-1 active:scale-95" title="Browse Topics & Difficulty">
+            <span>📚</span>
+            <span>Topics</span>
+          </button>
           <div class="bg-white border border-[#E2DEC9] px-2.5 py-0.5 rounded-full text-xs font-bold text-stone-700 shadow-2xs flex items-center gap-1.5">
             <span id="progress-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
             <span id="play-counter-badge">0 / 0 Solved</span>
@@ -625,7 +633,41 @@
       </div>
     </div>
 
-  </main>
+  <!-- ========================================================================= -->
+  <!-- LUXURY TOPIC & DIFFICULTY LIBRARY MODAL -->
+  <!-- ========================================================================= -->
+  <div id="topics-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-md hidden no-print">
+    <div class="bg-gradient-to-b from-[#FFFDF9] to-[#F8F5EE] rounded-3xl p-5 sm:p-6 max-w-2xl w-full text-center shadow-2xl border border-[#E5E0CF] relative flex flex-col max-h-[85vh]">
+      
+      <!-- Close Button -->
+      <button onclick="closeTopicsModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#F1EDE2] hover:bg-[#E4DFCE] text-stone-600 flex items-center justify-center text-sm font-bold transition">
+        ✕
+      </button>
+
+      <!-- Header -->
+      <div class="flex items-center justify-center gap-2 mb-1">
+        <span class="text-2xl">📚</span>
+        <h3 class="font-bold text-xl text-stone-900 tracking-tight">Crossword Topic Library</h3>
+      </div>
+      <p class="text-xs text-stone-500 mb-3">
+        Choose a curated topic and difficulty level to load a fresh crossword immediately.
+      </p>
+
+      <!-- Difficulty Filter Pills -->
+      <div class="flex items-center justify-center gap-1.5 mb-3.5 shrink-0 flex-wrap">
+        <button id="filter-all" onclick="filterTopics('all')" class="topic-filter-btn px-3 py-1 rounded-full text-xs font-bold bg-stone-900 text-white transition shadow-2xs">All Topics</button>
+        <button id="filter-easy" onclick="filterTopics('easy')" class="topic-filter-btn px-3 py-1 rounded-full text-xs font-bold bg-white text-stone-700 border border-[#E2DEC9] hover:bg-emerald-50 transition shadow-2xs">🟢 Easy</button>
+        <button id="filter-medium" onclick="filterTopics('medium')" class="topic-filter-btn px-3 py-1 rounded-full text-xs font-bold bg-white text-stone-700 border border-[#E2DEC9] hover:bg-amber-50 transition shadow-2xs">🟡 Medium</button>
+        <button id="filter-hard" onclick="filterTopics('hard')" class="topic-filter-btn px-3 py-1 rounded-full text-xs font-bold bg-white text-stone-700 border border-[#E2DEC9] hover:bg-rose-50 transition shadow-2xs">🔴 Hard</button>
+      </div>
+
+      <!-- Topics Grid -->
+      <div id="topics-grid-container" class="flex-1 overflow-y-auto custom-scroll grid grid-cols-1 sm:grid-cols-2 gap-3 p-1 text-left">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+  </div>
 
   <!-- ========================================================================= -->
   <!-- START TIMED CHALLENGE MODAL (PROCTOR SETUP) -->
@@ -1195,10 +1237,13 @@
       }
     }
 
-    // --- PRESETS ---
+    // --- PRESETS & TOPIC LIBRARY ---
     const PRESETS = {
       languages: {
+        emoji: "🌍",
         title: "World Languages",
+        level: "medium",
+        difficulty: "🟡 Medium",
         subtitle: "Can you name all these languages from around the globe?",
         words: [
           { word: "SPANISH", clue: "Language spoken in Spain and Mexico" },
@@ -1215,8 +1260,11 @@
         ]
       },
       animals: {
+        emoji: "🦁",
         title: "Animal Safari",
-        subtitle: "A delightful word puzzle for curious minds",
+        level: "easy",
+        difficulty: "🟢 Easy",
+        subtitle: "A delightful creature puzzle for curious minds",
         words: [
           { word: "ELEPHANT", clue: "Largest land mammal with a long trunk" },
           { word: "LION", clue: "The brave king of the jungle" },
@@ -1230,7 +1278,10 @@
         ]
       },
       space: {
+        emoji: "🚀",
         title: "Cosmic Odyssey",
+        level: "medium",
+        difficulty: "🟡 Medium",
         subtitle: "Journey through the stars, planets, and galaxies",
         words: [
           { word: "PLANET", clue: "A large round body orbiting a star" },
@@ -1244,7 +1295,10 @@
         ]
       },
       fruits: {
+        emoji: "🍓",
         title: "Fruit Garden",
+        level: "easy",
+        difficulty: "🟢 Easy",
         subtitle: "Sweet and tasty fruits from nature's basket",
         words: [
           { word: "BANANA", clue: "A long yellow fruit that peels easily" },
@@ -1258,7 +1312,10 @@
         ]
       },
       coding: {
+        emoji: "💻",
         title: "Future Coders",
+        level: "medium",
+        difficulty: "🟡 Medium",
         subtitle: "Essential concepts in computing & technology",
         words: [
           { word: "COMPUTER", clue: "Electronic machine that processes data" },
@@ -1272,7 +1329,10 @@
         ]
       },
       fantasy: {
+        emoji: "🐉",
         title: "Fantasy Realm",
+        level: "hard",
+        difficulty: "🔴 Hard",
         subtitle: "Castles, mythical spells, and legendary adventures",
         words: [
           { word: "DRAGON", clue: "Winged mythical creature that breathes fire" },
@@ -1283,6 +1343,59 @@
           { word: "MAGIC", clue: "Mysterious supernatural power" },
           { word: "SWORD", clue: "Blade weapon with a hilt" },
           { word: "CROWN", clue: "Royal golden headpiece" }
+        ]
+      },
+      capitals: {
+        emoji: "🗺️",
+        title: "World Capitals",
+        level: "hard",
+        difficulty: "🔴 Hard",
+        subtitle: "Can you identify major capital cities across the world?",
+        words: [
+          { word: "PARIS", clue: "Capital city of France" },
+          { word: "TOKYO", clue: "Capital city of Japan" },
+          { word: "LONDON", clue: "Capital city of the United Kingdom" },
+          { word: "MADRID", clue: "Capital city of Spain" },
+          { word: "BERLIN", clue: "Capital city of Germany" },
+          { word: "ROME", clue: "Capital city of Italy" },
+          { word: "CAIRO", clue: "Capital city of Egypt" },
+          { word: "OTTAWA", clue: "Capital city of Canada" },
+          { word: "WELLINGTON", clue: "Capital city of New Zealand" },
+          { word: "CANBERRA", clue: "Capital city of Australia" }
+        ]
+      },
+      science: {
+        emoji: "🧪",
+        title: "Science & Nature",
+        level: "medium",
+        difficulty: "🟡 Medium",
+        subtitle: "Fascinating phenomena of the physical universe",
+        words: [
+          { word: "GRAVITY", clue: "Force that pulls objects toward Earth" },
+          { word: "ENERGY", clue: "The ability to do work or cause change" },
+          { word: "MAGNET", clue: "Object that attracts iron and nickel" },
+          { word: "OXYGEN", clue: "Gas in the air that we breathe to live" },
+          { word: "FOSSIL", clue: "Preserved remains of an ancient organism" },
+          { word: "VOLCANO", clue: "Mountain that erupts lava and ash" },
+          { word: "PRISM", clue: "Glass object that splits light into a rainbow" },
+          { word: "ATOM", clue: "Basic building block of all matter" }
+        ]
+      },
+      sports: {
+        emoji: "⚽",
+        title: "Sports & Games",
+        level: "easy",
+        difficulty: "🟢 Easy",
+        subtitle: "Exciting games, athletics, and teamwork",
+        words: [
+          { word: "SOCCER", clue: "Game played by kicking a ball into a net" },
+          { word: "TENNIS", clue: "Racket sport played over a net with a yellow ball" },
+          { word: "BASKETBALL", clue: "Game where players dribble and shoot into a hoop" },
+          { word: "SWIMMING", clue: "Moving through water using arms and legs" },
+          { word: "RUNNING", clue: "Fast racing sport on track or field" },
+          { word: "BASEBALL", clue: "Sport with a bat, ball, and four bases" },
+          { word: "SURFING", clue: "Riding ocean waves on a board" },
+          { word: "HOCKEY", clue: "Sport played with curved sticks on ice or turf" }
         ]
       }
     };
@@ -1606,6 +1719,79 @@
       setTimeout(() => toast.classList.add('opacity-0', '-translate-y-2'), 2200);
     }
 
+    let currentTopicFilter = 'all';
+
+    function openTopicsModal() {
+      const modal = document.getElementById('topics-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        renderTopicsList(currentTopicFilter);
+      }
+    }
+
+    function closeTopicsModal() {
+      const modal = document.getElementById('topics-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function filterTopics(level) {
+      currentTopicFilter = level;
+      document.querySelectorAll('.topic-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-stone-900', 'text-white');
+        btn.classList.add('bg-white', 'text-stone-700');
+      });
+      const activeBtn = document.getElementById(`filter-${level}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white', 'text-stone-700');
+        activeBtn.classList.add('bg-stone-900', 'text-white');
+      }
+      renderTopicsList(level);
+    }
+
+    function renderTopicsList(filter = 'all') {
+      const container = document.getElementById('topics-grid-container');
+      if (!container) return;
+
+      const entries = Object.entries(PRESETS).filter(([key, data]) => {
+        if (filter === 'all') return true;
+        return data.level === filter;
+      });
+
+      const badgeColors = {
+        easy: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        medium: 'bg-amber-100 text-amber-800 border-amber-200',
+        hard: 'bg-rose-100 text-rose-800 border-rose-200'
+      };
+
+      container.innerHTML = entries.map(([key, data]) => `
+        <div onclick="selectTopic('${key}')" class="bg-white hover:bg-amber-50/50 border border-[#E2DEC9] hover:border-amber-400 rounded-2xl p-3.5 transition cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-2xl group-hover:scale-110 transition-transform duration-200">${data.emoji || '🧩'}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColors[data.level] || 'bg-stone-100 text-stone-700'}">
+                  ${data.difficulty}
+                </span>
+                <span class="text-[10px] text-stone-400 font-semibold">${data.words.length} words</span>
+              </div>
+            </div>
+            <h4 class="font-bold text-sm text-stone-900 group-hover:text-amber-900 transition">${data.title}</h4>
+            <p class="text-xs text-stone-500 mt-1 line-clamp-2 leading-relaxed">${data.subtitle}</p>
+          </div>
+          <div class="mt-3 pt-2 border-t border-[#F1EDE2] flex items-center justify-between text-xs font-bold text-stone-700 group-hover:text-amber-900">
+            <span>Play Puzzle</span>
+            <span class="group-hover:translate-x-1 transition-transform">➔</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectTopic(key) {
+      loadPreset(key);
+      closeTopicsModal();
+      switchTab('play');
+    }
+
     function loadPreset(key) {
       const p = PRESETS[key];
       if (!p) return;
@@ -1613,7 +1799,7 @@
       document.getElementById('input-subtitle').value = p.subtitle;
       document.getElementById('input-words').value = p.words.map(w => `${w.word}: ${w.clue}`).join('\n');
       handleGenerateClick();
-      showToast(`Loaded "${p.title}"`, '🌍');
+      showToast(`Loaded "${p.title}"`, p.emoji || '🌍');
     }
 
     function handleGenerateClick(isReroll = false) {
