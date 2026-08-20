@@ -61,35 +61,49 @@
       user-select: none !important;
     }
 
-    /* Tactile 3D Enamel Tile */
+    /* Tactile 3D Enamel Tile (Scaled cleanly to container box) */
+    #grid-scroll-wrapper {
+      container-type: size;
+      contain: layout size;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: visible;
+      padding: 2px;
+      box-sizing: border-box;
+    }
+
     .crossword-tile {
       position: relative;
       user-select: none;
       background: #FFFFFF;
       border: 1.5px solid #E4DFCE;
       border-radius: 6px;
-      box-shadow: 0 2.5px 0 0 #D5CEBA, 0 3px 5px -1px rgba(0,0,0,0.03);
+      box-shadow: 0 2px 0 0 #D5CEBA, 0 3px 5px -1px rgba(0,0,0,0.03);
       transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: clamp(22px, 5.2vmin, 38px);
-      height: clamp(22px, 5.2vmin, 38px);
-      font-size: clamp(11px, 2.6vmin, 16px);
+      width: clamp(16px, calc((100cqmin - 28px) / var(--board-max-dim, 11)), 38px);
+      height: clamp(16px, calc((100cqmin - 28px) / var(--board-max-dim, 11)), 38px);
+      font-size: clamp(9px, calc(((100cqmin - 28px) / var(--board-max-dim, 11)) * 0.52), 16px);
       flex-shrink: 0;
       box-sizing: border-box;
     }
 
     .crossword-tile-blank {
-      width: clamp(22px, 5.2vmin, 38px);
-      height: clamp(22px, 5.2vmin, 38px);
+      width: clamp(16px, calc((100cqmin - 28px) / var(--board-max-dim, 11)), 38px);
+      height: clamp(16px, calc((100cqmin - 28px) / var(--board-max-dim, 11)), 38px);
       background: transparent;
       flex-shrink: 0;
       box-sizing: border-box;
     }
 
     .crossword-tile .tile-number {
-      font-size: clamp(7px, 1.3vmin, 9px);
+      font-size: clamp(5px, calc(((100cqmin - 28px) / var(--board-max-dim, 11)) * 0.22), 8px);
     }
 
     .crossword-tile input {
@@ -378,12 +392,15 @@
           <div class="w-full flex items-center justify-between text-xs text-stone-500 pt-1 shrink-0 border-t border-[#F1EDE2]">
             <div class="flex items-center gap-2">
               <span class="text-stone-400">Typing:</span>
-              <button onclick="toggleDirection()" class="font-bold px-2.5 py-0.5 rounded-md bg-white border border-[#E2DEC9] text-stone-800 shadow-[0_1.5px_0_0_#D5CEBA] hover:bg-stone-50 transition active:translate-y-0.5">
+              <button onclick="toggleDirection()" class="font-bold px-2 py-0.5 rounded-md bg-white border border-[#E2DEC9] text-stone-800 shadow-[0_1.5px_0_0_#D5CEBA] hover:bg-stone-50 transition active:translate-y-0.5">
                 <span id="dir-label">ACROSS ➡️</span>
               </button>
-              <span class="hidden lg:inline text-stone-400 text-[11px]">(Press Space or tap tile to flip)</span>
+              <span class="hidden lg:inline text-stone-400 text-[11px]">(Space to flip)</span>
             </div>
-            <button id="clear-grid-btn" onclick="resetPuzzleInputs()" class="text-stone-400 hover:text-stone-700 underline text-xs">Clear Grid</button>
+            <div class="flex items-center gap-2.5">
+              <button id="toggle-keyboard-btn" onclick="toggleTouchKeyboard()" class="text-stone-400 hover:text-stone-700 underline text-xs">⌨️ Keys</button>
+              <button id="clear-grid-btn" onclick="resetPuzzleInputs()" class="text-stone-400 hover:text-stone-700 underline text-xs">Clear</button>
+            </div>
           </div>
         </div>
 
@@ -421,7 +438,7 @@
       </div>
 
       <!-- Integrated Touch Keyboard Drawer -->
-      <div id="touch-keyboard" class="mt-2 shrink-0 hidden sm:flex flex-col items-center gap-1 max-w-lg mx-auto w-full unselectable">
+      <div id="touch-keyboard" class="mt-1 shrink-0 hidden flex-col items-center gap-1 max-w-lg mx-auto w-full unselectable">
         <div class="flex gap-1 w-full justify-center">
           <button onclick="handleVirtualKey('Q')" class="key-btn h-8 flex-1 text-xs">Q</button>
           <button onclick="handleVirtualKey('W')" class="key-btn h-8 flex-1 text-xs">W</button>
@@ -1688,7 +1705,10 @@
       document.getElementById('play-title').textContent = title;
       document.getElementById('play-subtitle').textContent = subtitle || 'Can you name all these languages from around the globe?';
 
-      let html = `<div class="grid bg-transparent justify-center m-auto" style="grid-template-columns: repeat(${width}, max-content); gap: 3px;">`;
+      const maxDim = Math.max(width, height);
+      document.documentElement.style.setProperty('--board-max-dim', maxDim);
+
+      let html = `<div class="grid bg-transparent justify-center items-center m-auto" style="grid-template-columns: repeat(${width}, max-content); gap: 2.5px;">`;
 
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -1822,6 +1842,14 @@
     }
 
     // Touch Keyboard & Hardware Keyboard Input
+    function toggleTouchKeyboard() {
+      const kb = document.getElementById('touch-keyboard');
+      if (kb) {
+        kb.classList.toggle('hidden');
+        kb.classList.toggle('flex');
+      }
+    }
+
     function handleVirtualKey(key) {
       if (key === 'BACKSPACE') {
         handleBackspace();
