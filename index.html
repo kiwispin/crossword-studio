@@ -61,10 +61,8 @@
       user-select: none !important;
     }
 
-    /* Tactile 3D Enamel Tile (Scaled cleanly to container box with buffer) */
+    /* Tactile 3D Enamel Tile */
     #grid-scroll-wrapper {
-      container-type: size;
-      contain: layout size;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -72,7 +70,7 @@
       height: 100%;
       min-height: 0;
       overflow: visible;
-      padding: 6px 4px;
+      padding: 4px;
       box-sizing: border-box;
     }
 
@@ -87,23 +85,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: clamp(16px, calc((100cqmin - 48px) / var(--board-max-dim, 11)), 38px);
-      height: clamp(16px, calc((100cqmin - 48px) / var(--board-max-dim, 11)), 38px);
-      font-size: clamp(9px, calc(((100cqmin - 48px) / var(--board-max-dim, 11)) * 0.52), 16px);
+      width: var(--tile-size, 34px);
+      height: var(--tile-size, 34px);
+      font-size: var(--tile-font, 15px);
       flex-shrink: 0;
       box-sizing: border-box;
     }
 
     .crossword-tile-blank {
-      width: clamp(16px, calc((100cqmin - 48px) / var(--board-max-dim, 11)), 38px);
-      height: clamp(16px, calc((100cqmin - 48px) / var(--board-max-dim, 11)), 38px);
+      width: var(--tile-size, 34px);
+      height: var(--tile-size, 34px);
       background: transparent;
       flex-shrink: 0;
       box-sizing: border-box;
     }
 
     .crossword-tile .tile-number {
-      font-size: clamp(5px, calc(((100cqmin - 48px) / var(--board-max-dim, 11)) * 0.22), 8px);
+      font-size: var(--tile-num, 8px);
     }
 
     .crossword-tile input {
@@ -365,10 +363,10 @@
       <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0">
         
         <!-- Left 7 Cols: Active Clue Capsule + Tactile Grid -->
-        <div class="md:col-span-7 flex flex-col items-center justify-between min-h-0 bg-white/70 backdrop-blur-xs rounded-2xl p-3.5 border border-[#E5E0CF] shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+        <div class="md:col-span-7 flex flex-col items-center justify-between min-h-0 bg-white/70 backdrop-blur-xs rounded-2xl p-3 sm:p-3.5 border border-[#E5E0CF] shadow-[0_2px_12px_rgba(0,0,0,0.02)] gap-2">
           
           <!-- Active Clue Capsule -->
-          <div class="w-full max-w-md bg-white border border-[#E2DEC9] rounded-xl p-2 flex items-center justify-between gap-2 shadow-[0_2px_0_0_#ECE8D9] shrink-0 mb-2.5 unselectable">
+          <div class="w-full max-w-md bg-white border border-[#E2DEC9] rounded-xl p-2 flex items-center justify-between gap-2 shadow-[0_2px_0_0_#ECE8D9] shrink-0 unselectable">
             <button onclick="jumpPrevClue()" class="w-7 h-7 rounded-lg bg-[#FAF8F5] hover:bg-[#EDE8D8] text-stone-600 flex items-center justify-center text-xs font-bold transition shrink-0">
               ◀
             </button>
@@ -381,8 +379,8 @@
             </button>
           </div>
 
-          <!-- Crossword Grid (Scales dynamically, 0 black voids, pure tactile tiles) -->
-          <div id="grid-scroll-wrapper" class="flex-1 flex items-center justify-center w-full min-h-0 py-2 overflow-visible">
+          <!-- Crossword Grid (Scales dynamically, perfectly fills card space) -->
+          <div id="grid-scroll-wrapper" class="flex-1 flex items-center justify-center w-full min-h-0 py-1 overflow-visible">
             <div id="grid-container" class="m-auto bg-transparent unselectable flex items-center justify-center">
               <!-- Dynamically populated -->
             </div>
@@ -1696,6 +1694,26 @@
       document.getElementById('editor-preview-container').innerHTML = html;
     }
 
+    function updateGridSizing() {
+      const wrapper = document.getElementById('grid-scroll-wrapper');
+      if (!wrapper || !currentPuzzle) return;
+      const { width, height } = currentPuzzle;
+      if (!width || !height) return;
+
+      const rect = wrapper.getBoundingClientRect();
+      const availW = Math.max(100, (rect.width || wrapper.clientWidth) - 16);
+      const availH = Math.max(100, (rect.height || wrapper.clientHeight) - 16);
+      const gap = 3;
+
+      const tileW = Math.floor((availW - (width - 1) * gap) / width);
+      const tileH = Math.floor((availH - (height - 1) * gap) / height);
+      const tileSize = Math.max(22, Math.min(tileW, tileH, 44));
+
+      document.documentElement.style.setProperty('--tile-size', `${tileSize}px`);
+      document.documentElement.style.setProperty('--tile-font', `${Math.max(11, Math.floor(tileSize * 0.52))}px`);
+      document.documentElement.style.setProperty('--tile-num', `${Math.max(6, Math.floor(tileSize * 0.22))}px`);
+    }
+
     // Render Play View (Knotwords / Apple Award Style)
     function renderPlayView() {
       if (!currentPuzzle) return;
@@ -1705,10 +1723,9 @@
       document.getElementById('play-title').textContent = title;
       document.getElementById('play-subtitle').textContent = subtitle || 'Can you name all these languages from around the globe?';
 
-      const maxDim = Math.max(width, height);
-      document.documentElement.style.setProperty('--board-max-dim', maxDim);
+      updateGridSizing();
 
-      let html = `<div class="grid bg-transparent justify-center items-center m-auto" style="grid-template-columns: repeat(${width}, max-content); gap: 2.5px;">`;
+      let html = `<div class="grid bg-transparent justify-center items-center m-auto" style="grid-template-columns: repeat(${width}, var(--tile-size, 34px)); gap: 3px;">`;
 
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -2223,6 +2240,10 @@
       document.getElementById('gas-code-block').textContent = GAS_CODE;
       updateTeacherLockUI();
       if (!checkUrlHash()) loadPreset('languages');
+
+      window.addEventListener('resize', () => {
+        updateGridSizing();
+      });
     });
   </script>
 </body>
